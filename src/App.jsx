@@ -1,0 +1,24 @@
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Sidebar from "./components/Sidebar.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import Bicycle from "./pages/Bicycle.jsx";
+import Shopping from "./pages/Shopping.jsx";
+import Something from "./pages/Something.jsx";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Sidebar />
+
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/bicycle" element={<Bicycle />} />
+        <Route path="/shopping" element={<Shopping />} />
+        <Route path="/something" element={<Something />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
