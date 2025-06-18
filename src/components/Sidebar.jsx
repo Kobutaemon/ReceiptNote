@@ -5,7 +5,7 @@ import { PanelRight, X } from "lucide-react";
 const NavStyle = ({ isActive }) => {
   return {
     display: "block",
-    borderRadius: "15px",
+    borderRadius: "5px",
     padding: "0.5rem 1rem",
     transition: "background-color 0.3s", // スムーズな変化
     backgroundColor: isActive ? "#dedede" : "transparent",
@@ -30,11 +30,15 @@ function Sidebar() {
       }`}
     >
       <button
-        className="w-10 h-10 flex items-center justify-center cursor-pointer bg-gray-200 rounded mt-5 transition-colors duration-200 border border-black"
+        className="w-10 h-10 flex items-center justify-center cursor-pointer bg-[#60BDA7] rounded mt-5 transition-colors duration-200"
         onClick={menuClick}
         aria-label="メニューを開閉する"
       >
-        {isMenuOpen ? <X size={20} /> : <PanelRight size={20} />}
+        {isMenuOpen ? (
+          <X size={20} style={{ color: "white" }} />
+        ) : (
+          <PanelRight size={20} style={{ color: "white" }} />
+        )}
       </button>
       <nav
         className="bg-gray-100 h-screen pt-10 px-5 transition-transform duration-300 ease-in-out border-l border-black"
