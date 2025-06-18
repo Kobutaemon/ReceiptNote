@@ -10,16 +10,17 @@ function App() {
   return (
     <BrowserRouter>
       <Sidebar />
-      <header>
-        <h1 className="text-3xl text-center pt-4">ReceiptNote</h1>
-      </header>
-
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/bicycle" element={<Bicycle />} />
-        <Route path="/shopping" element={<Shopping />} />
-        <Route path="/something" element={<Something />} />
-      </Routes>
+      <div className="bg-gray-100 h-screen">
+        <header>
+          <h1 className="text-3xl text-center pt-4 font-bold">ReceiptNote</h1>
+        </header>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/bicycle" element={<Bicycle />} />
+          <Route path="/shopping" element={<Shopping />} />
+          <Route path="/something" element={<Something />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }
