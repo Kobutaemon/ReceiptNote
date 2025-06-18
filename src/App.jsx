@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -10,10 +9,7 @@ function App() {
   return (
     <BrowserRouter>
       <Sidebar />
-      <div className="bg-gray-100 h-screen">
-        <header>
-          <h1 className="text-3xl text-center pt-4 font-bold">ReceiptNote</h1>
-        </header>
+      <div className="bg-gray-200 h-screen">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/bicycle" element={<Bicycle />} />
