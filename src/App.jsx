@@ -10,6 +10,9 @@ function App() {
   return (
     <BrowserRouter>
       <Sidebar />
+      <header>
+        <h1 className="text-3xl text-center pt-4">ReceiptNote</h1>
+      </header>
 
       <Routes>
         <Route path="/" element={<Dashboard />} />
