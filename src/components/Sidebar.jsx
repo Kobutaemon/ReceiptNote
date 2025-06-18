@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { PanelRight } from "lucide-react";
+import { PanelRight, X } from "lucide-react";
 
 const NavStyle = ({ isActive }) => {
   return {
@@ -8,36 +8,73 @@ const NavStyle = ({ isActive }) => {
     borderRadius: "15px",
     padding: "0.5rem 1rem",
     transition: "background-color 0.3s", // スムーズな変化
-    // アクティブな場合にスタイルを適用
     backgroundColor: isActive ? "#dedede" : "transparent",
   };
 };
 
 function Sidebar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const menuClick = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleNavClick = () => {
+    setIsMenuOpen(false);
+  };
+
   return (
-    <div className="flex fixed right-10">
-      <button className="">
-        <PanelRight />
+    <div
+      className={`flex gap-4 fixed right-0 transition-all duration-300 ${
+        isMenuOpen ? "translate-x-0" : "translate-x-[80%]"
+      }`}
+    >
+      <button
+        className="w-10 h-10 flex items-center justify-center cursor-pointer hover:bg-gray-200 rounded mt-5 transition-colors duration-200"
+        onClick={menuClick}
+        aria-label="メニューを開閉する"
+      >
+        {isMenuOpen ? <X size={20} /> : <PanelRight size={20} />}
       </button>
-      <nav>
-        <ul className="flex flex-col gap-4 mt-10 text-lg">
+      <nav
+        className="bg-gray-100 h-screen pt-10 px-5 transition-transform duration-300 ease-in-out"
+        // isMenuOpenがfalseの時にメニューがフォーカスされないようにするなら下のコメントアウトを解除
+        // style={{ visibility: isMenuOpen ? "visible" : "hidden" }}
+      >
+        <ul className="flex flex-col gap-4 text-lg">
           <li>
-            <NavLink to="/dashboard" style={NavStyle}>
+            <NavLink
+              to="/"
+              style={NavStyle}
+              onClick={handleNavClick}
+            >
               ダッシュボード
             </NavLink>
           </li>
           <li>
-            <NavLink to="/bicycle" style={NavStyle}>
+            <NavLink
+              to="/bicycle"
+              style={NavStyle}
+              onClick={handleNavClick}
+            >
               駐輪代
             </NavLink>
           </li>
           <li>
-            <NavLink to="/shopping" style={NavStyle}>
+            <NavLink
+              to="/shopping"
+              style={NavStyle}
+              onClick={handleNavClick}
+            >
               買い物代
             </NavLink>
           </li>
           <li>
-            <NavLink to="/something" style={NavStyle}>
+            <NavLink
+              to="/something"
+              style={NavStyle}
+              onClick={handleNavClick}
+            >
               その他
             </NavLink>
           </li>
