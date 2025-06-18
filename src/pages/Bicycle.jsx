@@ -1,7 +1,14 @@
-import React from "react";
+import Register from "../components/Register";
 
 function Bicycle() {
-  return <div>Bicycle</div>;
+  return (
+    <div>
+      <div>
+        <h2 className="text-3xl text-center font-bold pt-4">駐輪代 登録</h2>
+      </div>
+      <Register />
+    </div>
+  );
 }
 
 export default Bicycle;
