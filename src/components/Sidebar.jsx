@@ -26,7 +26,7 @@ function Sidebar() {
   return (
     <div
       className={`flex gap-4 fixed right-0 transition-all duration-300 z-10 ${
-        isMenuOpen ? "translate-x-0" : "translate-x-[80%]"
+        isMenuOpen ? "translate-x-0" : "translate-x-[75%]"
       }`}
     >
       <button
@@ -42,10 +42,13 @@ function Sidebar() {
       </button>
       <nav
         className="bg-gray-100 h-screen pt-10 px-5 transition-transform duration-300 ease-in-out border-l border-black"
+        style={{
+          boxShadow: isMenuOpen ? "0px 0px 15px -5px #777777" : "none",
+        }}
         // isMenuOpenがfalseの時にメニューがフォーカスされないようにするなら下のコメントアウトを解除
         // style={{ visibility: isMenuOpen ? "visible" : "hidden" }}
       >
-        <ul className="flex flex-col gap-4 text-lg">
+        <ul className="flex flex-col gap-4 text-lg select-none">
           <li>
             <NavLink to="/" style={NavStyle} onClick={handleNavClick}>
               ダッシュボード
