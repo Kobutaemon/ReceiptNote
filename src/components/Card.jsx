@@ -1,4 +1,3 @@
-import React from "react";
 import { Bike, ShoppingBag, Ellipsis } from "lucide-react";
 
 function Card({ svgName, svgColor, cardTitle, cardTotal }) {
