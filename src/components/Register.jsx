@@ -3,7 +3,7 @@ import { getTodayDateJP } from "../utils/dateUtils";
 
 function Register() {
   const todayDate = getTodayDateJP();
-  console.log("今日の日付:", todayDate); // 2025/06/18の形式で出力
+
   const [registrationDate, setRegistrationDate] = useState(todayDate);
 
   return (
@@ -16,7 +16,6 @@ function Register() {
         value={registrationDate}
         onChange={(e) => setRegistrationDate(e.target.value)}
       />
-      <p>今日の日付: {todayDate}</p>
     </form>
   );
 }
