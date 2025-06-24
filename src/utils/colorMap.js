@@ -16,6 +16,6 @@ export const svgColorMap = {
 
 export const btnColorMap = {
   blue: "bg-blue-500",
-  green: "bg-green-500",
+  green: "bg-[#60BDA7]",
   gray: "bg-gray-500",
 };
