@@ -1,6 +1,4 @@
-import React from "react";
 import CardList from "../components/CardList";
-import { NavLink } from "react-router-dom";
 
 function Dashboard() {
   return (
