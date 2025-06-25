@@ -4,9 +4,9 @@ function Bicycle() {
   return (
     <div>
       <div>
-        <h2 className="text-3xl text-center font-bold pt-4">駐輪代 登録</h2>
+        <h2 className="text-3xl text-center font-bold pt-8">駐輪代 登録</h2>
       </div>
-      <Register />
+      <Register btnColor="blue" />
     </div>
   );
 }
