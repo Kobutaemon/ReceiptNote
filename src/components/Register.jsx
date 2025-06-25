@@ -94,7 +94,7 @@ function Register({ btnColor, category, user }) {
           disabled={loading}
           className={`self-end py-2 px-4 rounded text-white cursor-pointer ${btnBgColor}`}
         >
-          登録
+          {loading ? "登録中..." : "登録"}
         </button>
       </form>
     </div>
