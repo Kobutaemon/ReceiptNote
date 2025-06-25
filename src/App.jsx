@@ -6,7 +6,8 @@ import Dashboard from "./pages/Dashboard.jsx";
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabaseClient.js";
 import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
+// import { ja } from "@supabase/auth-ui-react/dist/locales/ja";
+import { ThemeSupa, ja } from "@supabase/auth-ui-shared";
 import Register from "./components/Register.jsx";
 
 function App() {
@@ -36,6 +37,11 @@ function App() {
             appearance={{ theme: ThemeSupa }}
             providers={[]}
             theme="dark"
+            localization={{
+              variables: {
+                ...ja,
+              },
+            }}
           />
         </div>
       </div>
