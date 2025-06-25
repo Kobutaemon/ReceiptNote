@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { PanelRight, X } from "lucide-react";
+import { supabase } from "../lib/supabaseClient";
 
 const NavStyle = ({ isActive }) => {
   return {
@@ -21,6 +22,19 @@ function Sidebar() {
 
   const handleNavClick = () => {
     setIsMenuOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      // ログアウトが成功すると、この後の処理は不要です。
+      // App.jsxの監視機能が自動でログイン画面に戻してくれます。
+    } catch (error) {
+      alert("ログアウト中にエラーが発生しました: " + error.message);
+    }
   };
 
   return (
@@ -48,7 +62,7 @@ function Sidebar() {
         // isMenuOpenがfalseの時にメニューがフォーカスされないようにするなら下のコメントアウトを解除
         // style={{ visibility: isMenuOpen ? "visible" : "hidden" }}
       >
-        <ul className="flex flex-col gap-4 text-lg select-none">
+        <ul className="flex flex-col gap-4 text-lg select-none justify-center">
           <li>
             <NavLink to="/" style={NavStyle} onClick={handleNavClick}>
               ダッシュボード
@@ -68,6 +82,15 @@ function Sidebar() {
             <NavLink to="/something" style={NavStyle} onClick={handleNavClick}>
               その他
             </NavLink>
+          </li>
+          <li>
+            <button
+              onClick={handleLogout}
+              className="cursor-pointer text-red-400 font-bold"
+              style={NavStyle({ isActive: false })}
+            >
+              ログアウト
+            </button>
           </li>
         </ul>
       </nav>
