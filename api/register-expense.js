@@ -37,10 +37,10 @@ export default async function handler(request, response) {
         .json({ error: "Invalid token", details: userError?.message });
     }
 
-    const { expense_date, amount, category, description } = request.body;
+    const { expense_date, price, category, description } = request.body;
 
     // 金額が数値で、かつ0以上であることを確認
-    if (typeof amount !== "number" || amount < 0) {
+    if (typeof price !== "number" || price < 0) {
       return response.status(400).json({ error: "金額が不正です。" });
     }
 
@@ -49,7 +49,7 @@ export default async function handler(request, response) {
       .insert({
         user_id: user.id,
         expense_date,
-        amount,
+        price,
         category,
         description,
       })
