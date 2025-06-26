@@ -41,7 +41,7 @@ function Register({ btnColor, category, user }) {
         // 経費データをJSON形式でボディに含める
         body: JSON.stringify({
           expense_date: registrationDate,
-          amount: parseInt(price, 10),
+          price: parseInt(price, 10),
           category: category,
           description: description,
         }),
