@@ -2,61 +2,67 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// サーバーサイドでのみ動作するため、ここに直接キーを書くのではなく、
-// Vercelの環境変数から読み込むのがベストプラクティス。
+// Vercelに設定した環境変数のキー名
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY; // service_roleキー
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
-// service_roleキーを使って、管理者権限を持つSupabaseクライアントを作成
+// 【改善点】環境変数が存在するかチェック
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error(
+    "Supabase URLまたはService Keyが環境変数に設定されていません。"
+  );
+}
+
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export default async function handler(request, response) {
-  // POSTリクエスト以外は拒否
   if (request.method !== "POST") {
     return response.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
-    // 1. リクエストからJWT（認証トークン）を取得
     const authHeader = request.headers.authorization;
     if (!authHeader) {
       return response.status(401).json({ error: "No authorization header" });
     }
     const token = authHeader.split(" ")[1];
 
-    // 2. トークンを検証してユーザー情報を取得
     const {
       data: { user },
       error: userError,
     } = await supabaseAdmin.auth.getUser(token);
-    if (userError) {
+    if (userError || !user) {
       return response
         .status(401)
-        .json({ error: "Invalid token", details: userError.message });
+        .json({ error: "Invalid token", details: userError?.message });
     }
 
-    // 3. リクエストボディから経費データを取得
     const { expense_date, amount, category, description } = request.body;
 
-    // 4. 取得したユーザーIDを使ってデータを登録
+    // 金額が数値で、かつ0以上であることを確認
+    if (typeof amount !== "number" || amount < 0) {
+      return response.status(400).json({ error: "金額が不正です。" });
+    }
+
     const { data, error: insertError } = await supabaseAdmin
       .from("expenses")
       .insert({
-        user_id: user.id, // 検証済みのユーザーIDを使用
+        user_id: user.id,
         expense_date,
         amount,
         category,
         description,
       })
-      .select(); // .select() を付けると登録後のデータを返してくれる
+      .select();
 
     if (insertError) {
       throw insertError;
     }
 
-    // 5. 成功レスポンスを返す
     return response.status(200).json({ message: "登録しました！", data: data });
   } catch (error) {
+    // エラーの詳細をログに出力
+    console.error("API Route Error:", error);
     return response
       .status(500)
       .json({ error: "Internal Server Error", details: error.message });
