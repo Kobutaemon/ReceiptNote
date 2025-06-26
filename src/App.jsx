@@ -8,7 +8,7 @@ import { supabase } from "./lib/supabaseClient.js";
 import { Auth } from "@supabase/auth-ui-react";
 // import { ja } from "@supabase/auth-ui-react/dist/locales/ja";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import Register from "./components/Register.jsx";
+import Register from "./pages/Register.jsx";
 
 function App() {
   const [session, setSession] = useState(null);
