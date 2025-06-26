@@ -15,30 +15,53 @@ function Register({ btnColor, category, user }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // userが渡されていない場合は処理を中断(安全対策)
-    if (!user) {
-      alert("エラー: ユーザー情報がありません。");
-      return;
-    }
     setLoading(true);
 
-    const { error } = await supabase.from("expenses").insert({
-      user_id: user.id,
-      expense_date: registrationDate,
-      price: parseInt(price, 10),
-      category: category,
-      description: description,
-    });
+    try {
+      // 1. 現在のセッションからアクセストークンを取得
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error(
+          "セッションの取得に失敗しました。再度ログインしてください。"
+        );
+      }
+      const token = session.access_token;
 
-    if (error) {
-      alert("エラーが発生 : " + error.message);
-    } else {
-      alert("登録完了！");
-      // フォームをリセット
+      // 2. fetch APIを使って、作成したAPIルートにリクエストを送信
+      const response = await fetch("/api/register-expense", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // 認証のためにトークンをヘッダーに含める
+          Authorization: `Bearer ${token}`,
+        },
+        // 経費データをJSON形式でボディに含める
+        body: JSON.stringify({
+          expense_date: registrationDate,
+          amount: parseInt(price, 10),
+          category: category,
+          description: description,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // APIルート側でエラーが発生した場合
+        throw new Error(result.error || "不明なエラーが発生しました。");
+      }
+
+      alert(result.message);
       setPrice("");
       setDescription("");
+    } catch (error) {
+      alert("エラーが発生しました: " + error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
