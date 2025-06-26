@@ -8,7 +8,7 @@ function Register({ btnColor, category, user }) {
   const btnBgColor = btnColorMap[btnColor];
 
   // 以下Supabaseのための定義
-  const [price, setPrice] = useState();
+  const [price, setPrice] = useState("");
   const [registrationDate, setRegistrationDate] = useState(todayDate);
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
