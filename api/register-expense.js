@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 // サーバーサイドでのみ動作するため、ここに直接キーを書くのではなく、
 // Vercelの環境変数から読み込むのがベストプラクティス。
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY; // service_roleキー
 
 // service_roleキーを使って、管理者権限を持つSupabaseクライアントを作成
