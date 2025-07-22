@@ -1,4 +1,5 @@
 import CardList from "../components/CardList";
+import MonthSelector from "../components/MonthSelector";
 
 function Dashboard() {
   return (
@@ -7,6 +8,7 @@ function Dashboard() {
         <h1 className="text-3xl text-center pt-4 font-bold">ReceiptNote</h1>
       </header>
       <main>
+        <MonthSelector />
         <CardList />
       </main>
       <footer>
