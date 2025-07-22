@@ -53,7 +53,7 @@ function Card({ svgName, svgColor, cardTitle, selectedMonth }) {
     };
 
     fetchTotal();
-  }, [cardTitle, selectedMonth]);
+  }, [selectedMonth]);
 
   // アイコン名をコンポーネントにマッピング
   const iconMap = {
