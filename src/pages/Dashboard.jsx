@@ -1,5 +1,6 @@
 import CardList from "../components/CardList";
 import MonthSelector from "../components/MonthSelector";
+import { getCurrentMonth } from "../utils/dateUtils";
 
 function Dashboard() {
   return (
@@ -8,7 +9,7 @@ function Dashboard() {
         <h1 className="text-3xl text-center pt-4 font-bold">ReceiptNote</h1>
       </header>
       <main>
-        <MonthSelector />
+        <MonthSelector selectedMonth={getCurrentMonth()} />
         <CardList />
       </main>
       <footer>
