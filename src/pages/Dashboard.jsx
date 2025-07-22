@@ -16,7 +16,7 @@ function Dashboard() {
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
         />
-        <CardList />
+        <CardList selectedMonth={selectedMonth} />
       </main>
       <footer>
         <p className="text-center fixed bottom-4 right-[50%] translate-x-[50%]">
