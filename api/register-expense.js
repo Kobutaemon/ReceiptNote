@@ -16,6 +16,22 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export default async function handler(request, response) {
+  // CORSヘッダーを設定
+  response.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://receipt-note.vercel.app/"
+  );
+  response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  response.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+
+  // OPTIONSリクエストの処理（プリフライトリクエスト）
+  if (request.method === "OPTIONS") {
+    return response.status(200).end();
+  }
+
   if (request.method !== "POST") {
     return response.status(405).json({ error: "Method Not Allowed" });
   }
@@ -37,10 +53,23 @@ export default async function handler(request, response) {
         .json({ error: "Invalid token", details: userError?.message });
     }
 
+    // リクエストボディの検証
+    if (!request.body) {
+      return response.status(400).json({ error: "リクエストボディが空です。" });
+    }
+
     const { expense_date, price, category, description } = request.body;
 
+    // 必須フィールドの検証
+    if (!expense_date || price === undefined || price === null || !category) {
+      return response.status(400).json({
+        error: "必須フィールドが不足しています。(日付、金額、カテゴリ)",
+      });
+    }
+
     // 金額が数値で、かつ0以上であることを確認
-    if (typeof price !== "number" || price < 0) {
+    const numericPrice = typeof price === "string" ? parseFloat(price) : price;
+    if (isNaN(numericPrice) || numericPrice < 0) {
       return response.status(400).json({ error: "金額が不正です。" });
     }
 
@@ -49,22 +78,34 @@ export default async function handler(request, response) {
       .insert({
         user_id: user.id,
         expense_date,
-        price,
+        price: numericPrice,
         category,
-        description,
+        description: description || null,
       })
       .select();
 
     if (insertError) {
-      throw insertError;
+      console.error("Supabase Insert Error:", insertError);
+      return response.status(500).json({
+        error: "データベースへの保存に失敗しました。",
+        details: insertError.message,
+      });
     }
 
-    return response.status(200).json({ message: "登録しました！", data: data });
+    return response.status(200).json({
+      message: "登録しました！",
+      data: data,
+    });
   } catch (error) {
     // エラーの詳細をログに出力
     console.error("API Route Error:", error);
-    return response
-      .status(500)
-      .json({ error: "Internal Server Error", details: error.message });
+
+    // レスポンスがまだ送信されていない場合のみエラーレスポンスを送信
+    if (!response.headersSent) {
+      return response.status(500).json({
+        error: "内部サーバーエラーが発生しました。",
+        details: error.message,
+      });
+    }
   }
 }
