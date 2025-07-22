@@ -3,19 +3,35 @@ import { Bike, ShoppingBag, Ellipsis } from "lucide-react";
 import { svgColorMap } from "../utils/colorMap";
 import { supabase } from "../lib/supabaseClient";
 
-function Card({ svgName, svgColor, cardTitle }) {
+function Card({ svgName, svgColor, cardTitle, selectedMonth }) {
   const [cardTotal, setCardTotal] = useState(0);
 
   useEffect(() => {
     const fetchTotal = async () => {
       // デバッグ: どのカテゴリのデータを取得しようとしているか確認
-      console.log(`Fetching total for category: ${cardTitle}`);
+      console.log(
+        `Fetching total for category: ${cardTitle}, month: ${selectedMonth}`
+      );
 
-      // 'category'カラムがcardTitleと一致する行の'price'カラムを取得
+      // 選択された月の年を取得（現在年を使用）
+      const currentYear = new Date().getFullYear();
+      const startDate = `${currentYear}-${selectedMonth}-01`;
+
+      // 月の最終日を取得
+      const nextMonth =
+        selectedMonth === "12"
+          ? "01"
+          : String(parseInt(selectedMonth) + 1).padStart(2, "0");
+      const nextYear = selectedMonth === "12" ? currentYear + 1 : currentYear;
+      const endDate = `${nextYear}-${nextMonth}-01`;
+
+      // 'category'カラムがcardTitleと一致し、expense_dateが選択月の範囲内の行の'price'カラムを取得
       const { data, error } = await supabase
         .from("expenses")
         .select("price")
-        .eq("category", cardTitle);
+        .eq("category", cardTitle)
+        .gte("expense_date", startDate)
+        .lt("expense_date", endDate);
 
       // デバッグ: エラーが発生していないか確認
       if (error) {
@@ -24,7 +40,7 @@ function Card({ svgName, svgColor, cardTitle }) {
       }
 
       // デバッグ: 取得したデータの内容を確認
-      console.log(`Data received for ${cardTitle}:`, data);
+      console.log(`Data received for ${cardTitle} in ${selectedMonth}:`, data);
 
       // 取得した'price'の合計を計算 (priceがnullやundefinedの場合も考慮)
       const total = data.reduce((acc, item) => acc + (item.price || 0), 0);
@@ -37,7 +53,7 @@ function Card({ svgName, svgColor, cardTitle }) {
     };
 
     fetchTotal();
-  }, [cardTitle]);
+  }, [selectedMonth]);
 
   // アイコン名をコンポーネントにマッピング
   const iconMap = {

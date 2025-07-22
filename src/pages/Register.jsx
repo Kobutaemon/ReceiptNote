@@ -18,46 +18,57 @@ function Register({ btnColor, category, user }) {
     setLoading(true);
 
     try {
-      // 1. 現在のセッションからアクセストークンを取得
+      // バリデーション
+      if (!price || parseFloat(price) <= 0) {
+        throw new Error("有効な金額を入力してください。");
+      }
+
+      if (!category) {
+        throw new Error("カテゴリが選択されていません。");
+      }
+
+      // 1. 現在のセッションとユーザーを確認
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession();
+
       if (sessionError || !session) {
         throw new Error(
           "セッションの取得に失敗しました。再度ログインしてください。"
         );
       }
-      const token = session.access_token;
 
-      // 2. fetch APIを使って、作成したAPIルートにリクエストを送信
-      const response = await fetch("/api/register-expense", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // 認証のためにトークンをヘッダーに含める
-          Authorization: `Bearer ${token}`,
-        },
-        // 経費データをJSON形式でボディに含める
-        body: JSON.stringify({
-          expense_date: registrationDate,
-          price: parseInt(price, 10),
-          category: category,
-          description: description,
-        }),
-      });
+      // ユーザーIDを取得
+      const userId = session.user.id;
+      console.log("Current user ID:", userId);
+      console.log("Session details:", session);
 
-      const result = await response.json();
+      // 2. Supabaseクライアントを直接使用してデータを挿入
+      const insertData = {
+        user_id: userId,
+        expense_date: registrationDate,
+        price: parseFloat(price),
+        category: category,
+        description: description || null,
+      };
+      console.log("Insert data:", insertData);
 
-      if (!response.ok) {
-        // APIルート側でエラーが発生した場合
-        throw new Error(result.error || "不明なエラーが発生しました。");
+      const { data, error: insertError } = await supabase
+        .from("expenses")
+        .insert(insertData)
+        .select();
+
+      if (insertError) {
+        console.error("Insert Error:", insertError);
+        throw new Error(`データの保存に失敗しました: ${insertError.message}`);
       }
 
-      alert(result.message);
+      alert("登録しました！");
       setPrice("");
       setDescription("");
     } catch (error) {
+      console.error("Registration Error:", error);
       alert("エラーが発生しました: " + error.message);
     } finally {
       setLoading(false);

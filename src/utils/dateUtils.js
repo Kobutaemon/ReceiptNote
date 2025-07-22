@@ -1,15 +1,26 @@
 import { toTwoDigits } from "./toTwoDigits";
 
-export const getTodayDateJP = () => {
+// 共通の日付取得関数
+const getCurrentDate = () => {
   const date = new Date();
-  const year = date.getFullYear().toString();
-  const month = (date.getMonth() + 1).toString();
-  const day = date.getDate().toString();
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+  };
+};
 
-  const yyyy = toTwoDigits(year, 4);
-  const mm = toTwoDigits(month, 2);
-  const dd = toTwoDigits(day, 2);
-  const ymd = yyyy + "-" + mm + "-" + dd;
+export const getTodayDateJP = () => {
+  const { year, month, day } = getCurrentDate();
 
-  return ymd;
+  const yyyy = toTwoDigits(year.toString(), 4);
+  const mm = toTwoDigits(month.toString(), 2);
+  const dd = toTwoDigits(day.toString(), 2);
+
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+export const getCurrentMonth = () => {
+  const { month } = getCurrentDate();
+  return toTwoDigits(month.toString(), 2);
 };
