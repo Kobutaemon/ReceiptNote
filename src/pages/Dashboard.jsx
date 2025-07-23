@@ -1,5 +1,6 @@
 import CardList from "../components/CardList";
 import MonthSelector from "../components/MonthSelector";
+import RefundHistories from "../components/RefundHistories";
 import { getCurrentMonth } from "../utils/dateUtils";
 import { useState } from "react";
 
@@ -17,6 +18,7 @@ function Dashboard() {
           onMonthChange={setSelectedMonth}
         />
         <CardList selectedMonth={selectedMonth} />
+        <RefundHistories />
       </main>
       <footer>
         <p className="text-center fixed bottom-4 right-[50%] translate-x-[50%]">
