@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bike, ShoppingBag, Ellipsis } from "lucide-react";
+import { Bike, ShoppingBag, Ellipsis, User } from "lucide-react";
 import { svgColorMap } from "../utils/colorMap";
 import { supabase } from "../lib/supabaseClient";
 
@@ -8,11 +8,6 @@ function Card({ svgName, svgColor, cardTitle, selectedMonth }) {
 
   useEffect(() => {
     const fetchTotal = async () => {
-      // デバッグ: どのカテゴリのデータを取得しようとしているか確認
-      console.log(
-        `Fetching total for category: ${cardTitle}, month: ${selectedMonth}`
-      );
-
       // 選択された月の年を取得（現在年を使用）
       const currentYear = new Date().getFullYear();
       const startDate = `${currentYear}-${selectedMonth}-01`;
@@ -53,13 +48,14 @@ function Card({ svgName, svgColor, cardTitle, selectedMonth }) {
     };
 
     fetchTotal();
-  }, [selectedMonth]);
+  }, [selectedMonth, cardTitle]);
 
   // アイコン名をコンポーネントにマッピング
   const iconMap = {
     bicycle: Bike,
     shopping: ShoppingBag,
     something: Ellipsis,
+    rittyan: User,
   };
 
   // 指定されたアイコンを取得（存在しない場合はEllipsisをデフォルト）

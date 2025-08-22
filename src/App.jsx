@@ -66,8 +66,18 @@ function App() {
               path="/shopping"
               element={
                 <Register
-                  btnColor="green"
+                  btnColor="purple"
                   category="買い物代"
+                  user={session.user}
+                />
+              }
+            />
+            <Route
+              path="/entertainment"
+              element={
+                <Register
+                  btnColor="green"
+                  category="交際費(代)"
                   user={session.user}
                 />
               }

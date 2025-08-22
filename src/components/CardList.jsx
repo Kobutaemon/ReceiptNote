@@ -11,8 +11,14 @@ function CardList({ selectedMonth }) {
       />
       <Card
         svgName="shopping"
-        svgColor="green"
+        svgColor="purple"
         cardTitle="買い物代"
+        selectedMonth={selectedMonth}
+      />
+      <Card
+        svgName="rittyan"
+        svgColor="green"
+        cardTitle="交際費(代)"
         selectedMonth={selectedMonth}
       />
       <Card

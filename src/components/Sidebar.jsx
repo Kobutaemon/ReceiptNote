@@ -79,6 +79,15 @@ function Sidebar() {
             </NavLink>
           </li>
           <li>
+            <NavLink
+              to="/entertainment"
+              style={NavStyle}
+              onClick={handleNavClick}
+            >
+              交際費(代)
+            </NavLink>
+          </li>
+          <li>
             <NavLink to="/something" style={NavStyle} onClick={handleNavClick}>
               その他
             </NavLink>
