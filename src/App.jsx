@@ -49,7 +49,7 @@ function App() {
     return (
       <BrowserRouter>
         <Sidebar />
-        <div className="bg-gray-100 h-screen">
+        <div className="bg-gray-100 min-h-screen">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route

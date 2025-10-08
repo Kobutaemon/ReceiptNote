@@ -19,7 +19,7 @@ function Dashboard() {
         <CardList selectedMonth={selectedMonth} />
       </main>
       <footer>
-        <p className="text-center fixed bottom-4 right-[50%] translate-x-[50%]">
+        <p className="text-center mt-10">
           &copy; 2025 Kobutaemon All Right Reserved.
         </p>
       </footer>
