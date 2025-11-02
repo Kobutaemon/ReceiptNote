@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as LucideIcons from "lucide-react";
 import { svgColorMap } from "../utils/colorMap";
 import { supabase } from "../lib/supabaseClient";
@@ -10,6 +10,7 @@ function Card({ card, selectedMonth, onDelete, onUpdate, isEditing, onEdit }) {
   const [editedTitle, setEditedTitle] = useState(card.cardTitle);
   const [editedIcon, setEditedIcon] = useState(card.svgName);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     const fetchTotal = async () => {
@@ -43,6 +44,23 @@ function Card({ card, selectedMonth, onDelete, onUpdate, isEditing, onEdit }) {
       fetchTotal();
     }
   }, [selectedMonth, card.cardTitle]);
+
+  // メニュー外のクリックでメニューを閉じる
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const handleUpdate = () => {
     onUpdate(card.id, editedTitle, editedIcon);
@@ -97,8 +115,11 @@ function Card({ card, selectedMonth, onDelete, onUpdate, isEditing, onEdit }) {
             <h3 className="text-xl font-bold text-gray-900">{cardTotal}円</h3>
           </div>
         </div>
-        <div className="relative">
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+        <div className="relative mt-1" ref={menuRef}>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="hover:bg-gray-200 p-2 rounded-full"
+          >
             <MoreVertical size={20} />
           </button>
           {isMenuOpen && (
