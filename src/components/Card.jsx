@@ -82,27 +82,31 @@ function Card({ card, selectedMonth, onDelete, onEdit }) {
           >
             <MoreVertical size={20} />
           </button>
-          {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-              <>
-                <button
-                  onClick={() => {
-                    onEdit();
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                >
-                  <Edit size={16} /> 編集
-                </button>
-                <button
-                  onClick={() => onDelete(card.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
-                >
-                  <Trash2 size={16} /> 削除
-                </button>
-              </>
-            </div>
-          )}
+          <div
+            className={`absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200 origin-top-right transition-all duration-150 ease-out ${
+              isMenuOpen
+                ? "scale-100 opacity-100"
+                : "scale-95 opacity-0 pointer-events-none"
+            }`}
+          >
+            <>
+              <button
+                onClick={() => {
+                  onEdit();
+                  setIsMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+              >
+                <Edit size={16} /> 編集
+              </button>
+              <button
+                onClick={() => onDelete(card.id)}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
+              >
+                <Trash2 size={16} /> 削除
+              </button>
+            </>
+          </div>
         </div>
       </div>
     </div>
