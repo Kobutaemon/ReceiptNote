@@ -19,10 +19,6 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
     }
   }, [card]);
 
-  if (!isOpen || !card) {
-    return null;
-  }
-
   const handleSave = () => {
     onSave(card.id, editedTitle, editedIcon, editedColor);
     onClose();
@@ -32,8 +28,18 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
   const colorComponent = svgColorMap[editedColor] || svgColorMap.gray;
 
   return (
-    <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg border border-gray-300 shadow-xl p-8 m-4 w-full max-w-md">
+    <div
+      className={`fixed inset-0 bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50 transition-opacity duration-300 ${
+        isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+      }`}
+      onClick={onClose}
+    >
+      <div
+        className={`bg-white rounded-lg border border-gray-300 shadow-xl p-8 m-4 w-full max-w-md transition-transform duration-300 ease-out ${
+          isOpen ? "scale-100" : "scale-95"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-2xl font-bold mb-6 text-center">カテゴリを編集</h2>
 
         {/* Preview */}
