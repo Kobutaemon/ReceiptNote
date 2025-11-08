@@ -77,8 +77,10 @@ function Card({ card, selectedMonth, onDelete, onEdit }) {
         </div>
         <div className="relative" ref={menuRef}>
           <button
+            type="button"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="hover:bg-gray-200 p-2 rounded-full"
+            className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-gray-200 active:bg-gray-300"
+            aria-label="カードメニューを開く"
           >
             <MoreVertical size={20} />
           </button>

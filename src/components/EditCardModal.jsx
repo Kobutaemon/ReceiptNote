@@ -12,6 +12,7 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
   const [editedColor, setEditedColor] = useState("");
   const modalRef = useRef(null);
   const previouslyFocusedElementRef = useRef(null);
+  const previousBodyOverflowRef = useRef("");
 
   useEffect(() => {
     if (card) {
@@ -55,6 +56,25 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return undefined;
+    }
+
+    const { style } = document.body;
+
+    if (isOpen) {
+      previousBodyOverflowRef.current = style.overflow;
+      style.overflow = "hidden";
+    } else {
+      style.overflow = previousBodyOverflowRef.current || "";
+    }
+
+    return () => {
+      style.overflow = previousBodyOverflowRef.current || "";
+    };
+  }, [isOpen]);
 
   const handleSave = () => {
     if (!card) {
