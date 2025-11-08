@@ -41,7 +41,7 @@ function Card({ card, selectedMonth, onDelete, onEdit }) {
     if (card.cardTitle) {
       fetchTotal();
     }
-  }, [selectedMonth, card.cardTitle, card]); // cardの変更も検知
+  }, [selectedMonth, card.cardTitle]);
 
   // メニュー外のクリックでメニューを閉じる
   useEffect(() => {
@@ -88,6 +88,7 @@ function Card({ card, selectedMonth, onDelete, onEdit }) {
                 ? "scale-100 opacity-100"
                 : "scale-95 opacity-0 pointer-events-none"
             }`}
+            aria-hidden={!isMenuOpen}
           >
             <>
               <button

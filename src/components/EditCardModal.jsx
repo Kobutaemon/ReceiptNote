@@ -1,5 +1,5 @@
 // src/components/EditCardModal.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as LucideIcons from "lucide-react";
 import { iconMap } from "../lib/iconMap";
 import { svgColorMap } from "../utils/colorMap";
@@ -10,6 +10,8 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
   const [editedTitle, setEditedTitle] = useState("");
   const [editedIcon, setEditedIcon] = useState("");
   const [editedColor, setEditedColor] = useState("");
+  const modalRef = useRef(null);
+  const previouslyFocusedElementRef = useRef(null);
 
   useEffect(() => {
     if (card) {
@@ -19,7 +21,46 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
     }
   }, [card]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      const previous = previouslyFocusedElementRef.current;
+      if (previous instanceof HTMLElement) {
+        previous.focus({ preventScroll: true });
+      }
+      return;
+    }
+
+    previouslyFocusedElementRef.current = document.activeElement;
+    const node = modalRef.current;
+    if (node) {
+      node.focus({ preventScroll: true });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   const handleSave = () => {
+    if (!card) {
+      return;
+    }
+
     onSave(card.id, editedTitle, editedIcon, editedColor);
     onClose();
   };
@@ -32,15 +73,30 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
       className={`fixed inset-0 bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50 transition-opacity duration-300 ${
         isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
+      aria-hidden={!isOpen}
       onClick={onClose}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-card-modal-title"
+        aria-describedby="edit-card-modal-description"
+        tabIndex={-1}
         className={`bg-white rounded-lg border border-gray-300 shadow-xl p-8 m-4 w-full max-w-md transition-transform duration-300 ease-out ${
           isOpen ? "scale-100" : "scale-95"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">カテゴリを編集</h2>
+        <h2
+          id="edit-card-modal-title"
+          className="text-2xl font-bold mb-6 text-center"
+        >
+          カテゴリを編集
+        </h2>
+        <p id="edit-card-modal-description" className="sr-only">
+          カテゴリのタイトル、アイコン、カラーを更新できます。
+        </p>
 
         {/* Preview */}
         <div className="mb-8">
