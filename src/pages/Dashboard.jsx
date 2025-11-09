@@ -3,7 +3,7 @@ import MonthSelector from "../components/MonthSelector";
 import { getCurrentMonth } from "../utils/dateUtils";
 import { useState } from "react";
 
-function Dashboard({ user }) {
+function Dashboard({ user, onLogout }) {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
 
   return (
@@ -18,6 +18,17 @@ function Dashboard({ user }) {
         />
         <CardList selectedMonth={selectedMonth} user={user} />
       </main>
+      {onLogout && (
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={onLogout}
+            className="text-xs text-gray-500 underline underline-offset-2 transition hover:text-gray-700"
+          >
+            ログアウト
+          </button>
+        </div>
+      )}
       <footer>
         <p className="text-center mt-10">
           &copy; 2025 Kobutaemon All Right Reserved.
