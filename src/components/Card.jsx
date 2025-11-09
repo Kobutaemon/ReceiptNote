@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabaseClient";
 
 const { Trash2, Edit, MoreVertical } = LucideIcons;
 
-function Card({ card, selectedMonth, onDelete, onEdit }) {
+function Card({ card, selectedMonth, onDelete, onEdit, userId }) {
   const [cardTotal, setCardTotal] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -24,6 +24,7 @@ function Card({ card, selectedMonth, onDelete, onEdit }) {
       const { data, error } = await supabase
         .from("expenses")
         .select("price")
+        .eq("user_id", userId)
         .eq("category", card.cardTitle)
         .gte("expense_date", startDate)
         .lt("expense_date", endDate);
@@ -38,10 +39,15 @@ function Card({ card, selectedMonth, onDelete, onEdit }) {
       setCardTotal(formattedTotal);
     };
 
+    if (!userId) {
+      setCardTotal(0);
+      return;
+    }
+
     if (card.cardTitle) {
       fetchTotal();
     }
-  }, [selectedMonth, card.cardTitle]);
+  }, [selectedMonth, card.cardTitle, userId]);
 
   // メニュー外のクリックでメニューを閉じる
   useEffect(() => {
@@ -64,7 +70,7 @@ function Card({ card, selectedMonth, onDelete, onEdit }) {
   const colorComponent = svgColorMap[card.svgColor] || svgColorMap.gray;
 
   return (
-    <div className="bg-white rounded-lg border border-black p-6 flex flex-col justify-between">
+    <div className="flex h-full flex-col justify-between rounded-lg border border-black bg-white p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className={`p-2 ${colorComponent["bg"]} rounded`}>
@@ -103,7 +109,10 @@ function Card({ card, selectedMonth, onDelete, onEdit }) {
                 <Edit size={16} /> 編集
               </button>
               <button
-                onClick={() => onDelete(card.id)}
+                onClick={() => {
+                  onDelete(card.id);
+                  setIsMenuOpen(false);
+                }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
               >
                 <Trash2 size={16} /> 削除

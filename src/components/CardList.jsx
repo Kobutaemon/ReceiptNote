@@ -1,67 +1,227 @@
-import { useState } from "react";
-import Card from "./Card";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import Card from "./Card";
 import EditCardModal from "./EditCardModal";
+import { supabase } from "../lib/supabaseClient";
 
-const initialCards = [
+const DEFAULT_CATEGORIES = [
   {
-    id: 1,
     svgName: "Bike",
     svgColor: "blue",
     cardTitle: "駐輪代",
   },
   {
-    id: 2,
     svgName: "ShoppingBag",
     svgColor: "purple",
     cardTitle: "買い物代",
   },
   {
-    id: 3,
     svgName: "User",
     svgColor: "green",
     cardTitle: "交際費(代)",
   },
   {
-    id: 4,
     svgName: "Ellipsis",
     svgColor: "gray",
     cardTitle: "その他",
   },
 ];
 
-function CardList({ selectedMonth }) {
-  const [cards, setCards] = useState(initialCards);
+const mapCategoryRow = (row) => ({
+  id: row.id,
+  svgName: row.icon ?? row.svgName,
+  svgColor: row.color ?? row.svgColor,
+  cardTitle: row.title ?? row.cardTitle,
+});
+
+function CardList({ selectedMonth, user }) {
+  const [cards, setCards] = useState([]);
   const [editingCard, setEditingCard] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const userId = user?.id ?? null;
 
-  const addCard = () => {
-    const newCard = {
-      id: cards.length > 0 ? Math.max(...cards.map((c) => c.id)) + 1 : 1,
-      svgName: "Plus",
-      svgColor: "gray",
-      cardTitle: "新しいカテゴリ",
+  useEffect(() => {
+    if (!userId) {
+      setCards([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadCategories = async () => {
+      setIsLoading(true);
+
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, user_id, title, icon, color, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("カテゴリの取得に失敗しました", error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        const payload = DEFAULT_CATEGORIES.map((category) => ({
+          user_id: userId,
+          title: category.cardTitle,
+          icon: category.svgName,
+          color: category.svgColor,
+        }));
+
+        const { data: inserted, error: insertError } = await supabase
+          .from("categories")
+          .insert(payload)
+          .select();
+
+        if (insertError) {
+          console.error("初期カテゴリの作成に失敗しました", insertError);
+          if (isMounted) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setCards(inserted.map(mapCategoryRow));
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      if (isMounted) {
+        setCards(data.map(mapCategoryRow));
+        setIsLoading(false);
+      }
     };
-    setCards([...cards, newCard]);
+
+    loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+
+  const addCard = async () => {
+    if (!userId) {
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .insert({
+          user_id: userId,
+          title: "新しいカテゴリ",
+          icon: "Plus",
+          color: "gray",
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const newCard = mapCategoryRow(data);
+      setCards((prev) => [...prev, newCard]);
+      setEditingCard(newCard);
+    } catch (error) {
+      console.error("カテゴリの追加に失敗しました", error);
+      alert("カテゴリの追加に失敗しました。");
+    }
   };
 
-  const deleteCard = (id) => {
-    setCards(cards.filter((card) => card.id !== id));
+  const deleteCard = async (id) => {
+    if (!userId) {
+      return;
+    }
+
+    const targetCard = cards.find((card) => card.id === id);
+
+    try {
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+      if (error) {
+        throw error;
+      }
+
+      setCards((prev) => prev.filter((card) => card.id !== id));
+
+      if (editingCard?.id === id) {
+        setEditingCard(null);
+      }
+
+      if (targetCard) {
+        const { error: expenseError } = await supabase
+          .from("expenses")
+          .delete()
+          .eq("user_id", userId)
+          .eq("category", targetCard.cardTitle);
+
+        if (expenseError) {
+          console.error("関連する支出の削除に失敗しました", expenseError);
+        }
+      }
+    } catch (error) {
+      console.error("カテゴリの削除に失敗しました", error);
+      alert("カテゴリの削除に失敗しました。");
+    }
   };
 
-  const updateCard = (id, newTitle, newIcon, newColor) => {
-    setCards(
-      cards.map((card) =>
-        card.id === id
-          ? {
-              ...card,
-              cardTitle: newTitle,
-              svgName: newIcon,
-              svgColor: newColor,
-            }
-          : card
-      )
-    );
-    setEditingCard(null);
+  const updateCard = async (id, newTitle, newIcon, newColor) => {
+    if (!userId) {
+      return;
+    }
+
+    const previousCard = cards.find((card) => card.id === id);
+
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .update({
+          title: newTitle,
+          icon: newIcon,
+          color: newColor,
+        })
+        .eq("id", id)
+        .eq("user_id", userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setCards((prev) =>
+        prev.map((card) => (card.id === id ? mapCategoryRow(data) : card))
+      );
+      setEditingCard(null);
+
+      if (previousCard && previousCard.cardTitle !== newTitle) {
+        const { error: expenseError } = await supabase
+          .from("expenses")
+          .update({ category: newTitle })
+          .eq("user_id", userId)
+          .eq("category", previousCard.cardTitle);
+
+        if (expenseError) {
+          console.error("関連する支出の更新に失敗しました", expenseError);
+          alert("支出のカテゴリ更新に失敗しました。");
+        }
+      }
+    } catch (error) {
+      console.error("カテゴリの更新に失敗しました", error);
+      alert("カテゴリの更新に失敗しました。");
+    }
   };
 
   const handleEdit = (card) => {
@@ -74,26 +234,36 @@ function CardList({ selectedMonth }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 mt-10">
-        {cards.map((card) => (
-          <Card
-            key={card.id}
-            card={card}
-            selectedMonth={selectedMonth}
-            onDelete={deleteCard}
-            onEdit={() => handleEdit(card)}
-          />
-        ))}
-        <div
-          className="flex items-center justify-center bg-gray-100 rounded-lg border-2 border-dashed border-gray-400 cursor-pointer hover:bg-gray-200 transition-colors p-6"
+      <div className="grid auto-rows-fr grid-cols-1 gap-6 p-6 mt-10 md:grid-cols-2 lg:grid-cols-3">
+        {isLoading ? (
+          <div className="col-span-full flex justify-center py-12 text-gray-500">
+            カテゴリを読み込み中です...
+          </div>
+        ) : (
+          cards.map((card) => (
+            <Card
+              key={card.id}
+              card={card}
+              selectedMonth={selectedMonth}
+              onDelete={deleteCard}
+              onEdit={() => handleEdit(card)}
+              userId={userId}
+            />
+          ))
+        )}
+        <button
+          type="button"
           onClick={addCard}
+          disabled={isLoading}
+          className="flex h-full items-center justify-center rounded-lg border-2 border-dashed border-gray-400 bg-gray-100 p-6 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
+          aria-label="カテゴリを追加"
         >
           <Plus size={40} className="text-gray-500" />
-        </div>
+        </button>
       </div>
       <EditCardModal
         card={editingCard}
-        isOpen={!!editingCard}
+        isOpen={Boolean(editingCard)}
         onClose={handleCloseModal}
         onSave={updateCard}
       />

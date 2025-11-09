@@ -51,7 +51,7 @@ function App() {
         <Sidebar />
         <div className="bg-gray-100 min-h-screen">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Dashboard user={session.user} />} />
             <Route
               path="/bicycle"
               element={

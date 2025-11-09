@@ -3,7 +3,7 @@ import MonthSelector from "../components/MonthSelector";
 import { getCurrentMonth } from "../utils/dateUtils";
 import { useState } from "react";
 
-function Dashboard() {
+function Dashboard({ user }) {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
 
   return (
@@ -16,7 +16,7 @@ function Dashboard() {
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
         />
-        <CardList selectedMonth={selectedMonth} />
+        <CardList selectedMonth={selectedMonth} user={user} />
       </main>
       <footer>
         <p className="text-center mt-10">
