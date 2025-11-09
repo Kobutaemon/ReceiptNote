@@ -138,12 +138,39 @@ function CardList({ selectedMonth, user }) {
 
   const deleteCard = async (id) => {
     if (!userId) {
-      return;
+      return false;
     }
 
     const targetCard = cards.find((card) => card.id === id);
 
     try {
+      if (targetCard) {
+        const { data: expenses, error: expensesError } = await supabase
+          .from("expenses")
+          .select("price")
+          .eq("user_id", userId)
+          .eq("category", targetCard.cardTitle);
+
+        if (expensesError) {
+          throw expensesError;
+        }
+
+        const total = (expenses ?? []).reduce(
+          (sum, item) => sum + (item.price || 0),
+          0
+        );
+
+        if (total > 0) {
+          const shouldDelete = window.confirm(
+            "このカテゴリには今まで1円以上の支出が存在します。\n削除すると支出記録も削除されますが、続行しますか？"
+          );
+
+          if (!shouldDelete) {
+            return false;
+          }
+        }
+      }
+
       const { error } = await supabase
         .from("categories")
         .delete()
@@ -156,10 +183,6 @@ function CardList({ selectedMonth, user }) {
 
       setCards((prev) => prev.filter((card) => card.id !== id));
 
-      if (editingCard?.id === id) {
-        setEditingCard(null);
-      }
-
       if (targetCard) {
         const { error: expenseError } = await supabase
           .from("expenses")
@@ -171,9 +194,16 @@ function CardList({ selectedMonth, user }) {
           console.error("関連する支出の削除に失敗しました", expenseError);
         }
       }
+
+      if (editingCard?.id === id) {
+        setEditingCard(null);
+      }
+
+      return true;
     } catch (error) {
       console.error("カテゴリの削除に失敗しました", error);
       alert("カテゴリの削除に失敗しました。");
+      return false;
     }
   };
 

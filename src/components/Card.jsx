@@ -109,9 +109,11 @@ function Card({ card, selectedMonth, onDelete, onEdit, userId }) {
                 <Edit size={16} /> 編集
               </button>
               <button
-                onClick={() => {
-                  onDelete(card.id);
-                  setIsMenuOpen(false);
+                onClick={async () => {
+                  const deleted = await onDelete(card.id);
+                  if (deleted) {
+                    setIsMenuOpen(false);
+                  }
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
               >
