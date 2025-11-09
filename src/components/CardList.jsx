@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import Card from "./Card";
 import EditCardModal from "./EditCardModal";
+import AddExpenseModal from "./AddExpenseModal";
 import { supabase } from "../lib/supabaseClient";
 
 const DEFAULT_CATEGORIES = [
@@ -37,6 +38,9 @@ const mapCategoryRow = (row) => ({
 function CardList({ selectedMonth, user }) {
   const [cards, setCards] = useState([]);
   const [editingCard, setEditingCard] = useState(null);
+  const [expenseModalCard, setExpenseModalCard] = useState(null);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const userId = user?.id ?? null;
 
@@ -199,6 +203,8 @@ function CardList({ selectedMonth, user }) {
         setEditingCard(null);
       }
 
+      setRefreshKey((prev) => prev + 1);
+
       return true;
     } catch (error) {
       console.error("カテゴリの削除に失敗しました", error);
@@ -248,6 +254,8 @@ function CardList({ selectedMonth, user }) {
           alert("支出のカテゴリ更新に失敗しました。");
         }
       }
+
+      setRefreshKey((prev) => prev + 1);
     } catch (error) {
       console.error("カテゴリの更新に失敗しました", error);
       alert("カテゴリの更新に失敗しました。");
@@ -260,6 +268,24 @@ function CardList({ selectedMonth, user }) {
 
   const handleCloseModal = () => {
     setEditingCard(null);
+  };
+
+  const handleOpenExpenseModal = (card) => {
+    setExpenseModalCard(card);
+    setIsExpenseModalOpen(true);
+  };
+
+  const handleCloseExpenseModal = () => {
+    setIsExpenseModalOpen(false);
+  };
+
+  const handleExpenseModalAfterClose = () => {
+    setExpenseModalCard(null);
+  };
+
+  const handleExpenseSaved = () => {
+    setIsExpenseModalOpen(false);
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -278,6 +304,8 @@ function CardList({ selectedMonth, user }) {
               onDelete={deleteCard}
               onEdit={() => handleEdit(card)}
               userId={userId}
+              onAddExpense={() => handleOpenExpenseModal(card)}
+              refreshKey={refreshKey}
             />
           ))
         )}
@@ -296,6 +324,14 @@ function CardList({ selectedMonth, user }) {
         isOpen={Boolean(editingCard)}
         onClose={handleCloseModal}
         onSave={updateCard}
+      />
+      <AddExpenseModal
+        card={expenseModalCard}
+        userId={userId}
+        isOpen={isExpenseModalOpen}
+        onClose={handleCloseExpenseModal}
+        onAfterClose={handleExpenseModalAfterClose}
+        onSaved={handleExpenseSaved}
       />
     </>
   );

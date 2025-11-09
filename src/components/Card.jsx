@@ -3,9 +3,17 @@ import * as LucideIcons from "lucide-react";
 import { svgColorMap } from "../utils/colorMap";
 import { supabase } from "../lib/supabaseClient";
 
-const { Trash2, Edit, MoreVertical } = LucideIcons;
+const { Trash2, Edit, MoreVertical, Plus } = LucideIcons;
 
-function Card({ card, selectedMonth, onDelete, onEdit, userId }) {
+function Card({
+  card,
+  selectedMonth,
+  onDelete,
+  onEdit,
+  userId,
+  onAddExpense,
+  refreshKey,
+}) {
   const [cardTotal, setCardTotal] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -47,7 +55,7 @@ function Card({ card, selectedMonth, onDelete, onEdit, userId }) {
     if (card.cardTitle) {
       fetchTotal();
     }
-  }, [selectedMonth, card.cardTitle, userId]);
+  }, [selectedMonth, card.cardTitle, userId, refreshKey]);
 
   // メニュー外のクリックでメニューを閉じる
   useEffect(() => {
@@ -81,45 +89,55 @@ function Card({ card, selectedMonth, onDelete, onEdit, userId }) {
             <h3 className="text-xl font-bold text-gray-900">{cardTotal}円</h3>
           </div>
         </div>
-        <div className="relative" ref={menuRef}>
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={onAddExpense}
             className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-gray-200 active:bg-gray-300"
-            aria-label="カードメニューを開く"
+            aria-label="支出を追加"
           >
-            <MoreVertical size={20} />
+            <Plus size={20} />
           </button>
-          <div
-            className={`absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200 origin-top-right transition-all duration-150 ease-out ${
-              isMenuOpen
-                ? "scale-100 opacity-100"
-                : "scale-95 opacity-0 pointer-events-none"
-            }`}
-            aria-hidden={!isMenuOpen}
-          >
-            <>
-              <button
-                onClick={() => {
-                  onEdit();
-                  setIsMenuOpen(false);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-              >
-                <Edit size={16} /> 編集
-              </button>
-              <button
-                onClick={async () => {
-                  const deleted = await onDelete(card.id);
-                  if (deleted) {
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-gray-200 active:bg-gray-300"
+              aria-label="カードメニューを開く"
+            >
+              <MoreVertical size={20} />
+            </button>
+            <div
+              className={`absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200 origin-top-right transition-all duration-150 ease-out ${
+                isMenuOpen
+                  ? "scale-100 opacity-100"
+                  : "scale-95 opacity-0 pointer-events-none"
+              }`}
+              aria-hidden={!isMenuOpen}
+            >
+              <>
+                <button
+                  onClick={() => {
+                    onEdit();
                     setIsMenuOpen(false);
-                  }
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
-              >
-                <Trash2 size={16} /> 削除
-              </button>
-            </>
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <Edit size={16} /> 編集
+                </button>
+                <button
+                  onClick={async () => {
+                    const deleted = await onDelete(card.id);
+                    if (deleted) {
+                      setIsMenuOpen(false);
+                    }
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <Trash2 size={16} /> 削除
+                </button>
+              </>
+            </div>
           </div>
         </div>
       </div>
