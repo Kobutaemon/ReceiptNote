@@ -35,7 +35,7 @@ const mapCategoryRow = (row) => ({
   cardTitle: row.title ?? row.cardTitle,
 });
 
-function CardList({ selectedMonth, user }) {
+function CardList({ selectedMonth, user, onExpensesMutated }) {
   const [cards, setCards] = useState([]);
   const [editingCard, setEditingCard] = useState(null);
   const [expenseModalCard, setExpenseModalCard] = useState(null);
@@ -204,6 +204,7 @@ function CardList({ selectedMonth, user }) {
       }
 
       setRefreshKey((prev) => prev + 1);
+      onExpensesMutated?.();
 
       return true;
     } catch (error) {
@@ -256,6 +257,7 @@ function CardList({ selectedMonth, user }) {
       }
 
       setRefreshKey((prev) => prev + 1);
+      onExpensesMutated?.();
     } catch (error) {
       console.error("カテゴリの更新に失敗しました", error);
       alert("カテゴリの更新に失敗しました。");
@@ -286,6 +288,7 @@ function CardList({ selectedMonth, user }) {
   const handleExpenseSaved = () => {
     setIsExpenseModalOpen(false);
     setRefreshKey((prev) => prev + 1);
+    onExpensesMutated?.();
   };
 
   return (

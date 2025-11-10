@@ -1,10 +1,16 @@
+import { useCallback, useState } from "react";
 import CardList from "../components/CardList";
 import MonthSelector from "../components/MonthSelector";
+import AvailableFunds from "../components/AvailableFunds";
 import { getCurrentMonth } from "../utils/dateUtils";
-import { useState } from "react";
 
 function Dashboard({ user, onLogout }) {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+  const [expensesVersion, setExpensesVersion] = useState(0);
+
+  const handleExpensesMutated = useCallback(() => {
+    setExpensesVersion((prev) => prev + 1);
+  }, []);
 
   return (
     <div>
@@ -12,11 +18,20 @@ function Dashboard({ user, onLogout }) {
         <h1 className="text-3xl text-center pt-4 font-bold">ReceiptNote</h1>
       </header>
       <main>
+        <AvailableFunds
+          selectedMonth={selectedMonth}
+          userId={user?.id ?? null}
+          expensesVersion={expensesVersion}
+        />
         <MonthSelector
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
         />
-        <CardList selectedMonth={selectedMonth} user={user} />
+        <CardList
+          selectedMonth={selectedMonth}
+          user={user}
+          onExpensesMutated={handleExpensesMutated}
+        />
       </main>
       {onLogout && (
         <div className="mt-8 flex justify-center">
