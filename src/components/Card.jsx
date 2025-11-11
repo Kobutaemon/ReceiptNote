@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import * as LucideIcons from "lucide-react";
 import { svgColorMap } from "../utils/colorMap";
 import { supabase } from "../lib/supabaseClient";
+import { formatCurrencyJPY } from "../utils/currency";
 
 const { Trash2, Edit, MoreVertical, Plus } = LucideIcons;
 
@@ -13,10 +14,12 @@ function Card({
   userId,
   onAddExpense,
   refreshKey,
+  onSelect,
 }) {
   const [cardTotal, setCardTotal] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const isSelectable = Boolean(onSelect);
 
   useEffect(() => {
     const fetchTotal = async () => {
@@ -43,8 +46,7 @@ function Card({
       }
 
       const total = data.reduce((acc, item) => acc + (item.price || 0), 0);
-      const formattedTotal = new Intl.NumberFormat("ja-JP").format(total);
-      setCardTotal(formattedTotal);
+      setCardTotal(total);
     };
 
     if (!userId) {
@@ -57,7 +59,6 @@ function Card({
     }
   }, [selectedMonth, card.cardTitle, userId, refreshKey]);
 
-  // メニュー外のクリックでメニューを閉じる
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -77,8 +78,47 @@ function Card({
   const IconComponent = LucideIcons[card.svgName] || LucideIcons.HelpCircle;
   const colorComponent = svgColorMap[card.svgColor] || svgColorMap.gray;
 
+  const handleSelect = useCallback(() => {
+    if (isMenuOpen) {
+      return;
+    }
+    onSelect?.(card);
+  }, [card, isMenuOpen, onSelect]);
+
+  const handleKeyDown = useCallback(
+    (event) => {
+      if (isMenuOpen) {
+        return;
+      }
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onSelect?.(card);
+      }
+    },
+    [card, isMenuOpen, onSelect]
+  );
+
+  const baseClassName =
+    "flex h-full flex-col justify-between rounded-lg border border-black bg-white p-6 transition-shadow";
+  const interactiveClassName = isSelectable
+    ? "cursor-pointer hover:shadow-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+    : "";
+  const cardClassName = `${baseClassName} ${interactiveClassName}`.trim();
+
   return (
-    <div className="flex h-full flex-col justify-between rounded-lg border border-black bg-white p-6">
+    <div
+      className={cardClassName}
+      {...(isSelectable
+        ? {
+            onClick: handleSelect,
+            onKeyDown: handleKeyDown,
+            role: "button",
+            tabIndex: 0,
+            "aria-label": `${card.cardTitle}の詳細を表示`,
+          }
+        : {})}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className={`p-2 ${colorComponent["bg"]} rounded`}>
@@ -86,13 +126,18 @@ function Card({
           </div>
           <div>
             <p className="text-sm text-gray-600">{card.cardTitle}</p>
-            <h3 className="text-xl font-bold text-gray-900">{cardTotal}円</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              {formatCurrencyJPY(cardTotal)}
+            </h3>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={onAddExpense}
+            onClick={(event) => {
+              event.stopPropagation();
+              onAddExpense();
+            }}
             className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-gray-200 active:bg-gray-300"
             aria-label="支出を追加"
           >
@@ -101,7 +146,10 @@ function Card({
           <div className="relative" ref={menuRef}>
             <button
               type="button"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsMenuOpen((prev) => !prev);
+              }}
               className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-gray-200 active:bg-gray-300"
               aria-label="カードメニューを開く"
             >
@@ -117,7 +165,8 @@ function Card({
             >
               <>
                 <button
-                  onClick={() => {
+                  onClick={(event) => {
+                    event.stopPropagation();
                     onEdit();
                     setIsMenuOpen(false);
                   }}
@@ -126,7 +175,8 @@ function Card({
                   <Edit size={16} /> 編集
                 </button>
                 <button
-                  onClick={async () => {
+                  onClick={async (event) => {
+                    event.stopPropagation();
                     const deleted = await onDelete(card.id);
                     if (deleted) {
                       setIsMenuOpen(false);

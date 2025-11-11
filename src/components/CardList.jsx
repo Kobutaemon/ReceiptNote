@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import Card from "./Card";
 import EditCardModal from "./EditCardModal";
 import AddExpenseModal from "./AddExpenseModal";
+import CardDetailModal from "./CardDetailModal";
 import { supabase } from "../lib/supabaseClient";
 
 const DEFAULT_CATEGORIES = [
@@ -42,6 +43,8 @@ function CardList({ selectedMonth, user, onExpensesMutated }) {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [detailCard, setDetailCard] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const userId = user?.id ?? null;
 
   useEffect(() => {
@@ -291,6 +294,22 @@ function CardList({ selectedMonth, user, onExpensesMutated }) {
     onExpensesMutated?.();
   };
 
+  const handleCardSelect = (cardToShow) => {
+    if (!userId) {
+      return;
+    }
+    setDetailCard(cardToShow);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleDetailClose = () => {
+    setIsDetailModalOpen(false);
+  };
+
+  const handleDetailAfterClose = () => {
+    setDetailCard(null);
+  };
+
   return (
     <>
       <div className="grid auto-rows-fr grid-cols-1 gap-6 p-6 mt-10 md:grid-cols-2 lg:grid-cols-3">
@@ -309,6 +328,7 @@ function CardList({ selectedMonth, user, onExpensesMutated }) {
               userId={userId}
               onAddExpense={() => handleOpenExpenseModal(card)}
               refreshKey={refreshKey}
+              onSelect={userId ? handleCardSelect : undefined}
             />
           ))
         )}
@@ -335,6 +355,14 @@ function CardList({ selectedMonth, user, onExpensesMutated }) {
         onClose={handleCloseExpenseModal}
         onAfterClose={handleExpenseModalAfterClose}
         onSaved={handleExpenseSaved}
+      />
+      <CardDetailModal
+        card={detailCard}
+        userId={userId}
+        selectedMonth={selectedMonth}
+        isOpen={isDetailModalOpen}
+        onClose={handleDetailClose}
+        onAfterClose={handleDetailAfterClose}
       />
     </>
   );

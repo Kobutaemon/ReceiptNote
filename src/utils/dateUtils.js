@@ -24,3 +24,21 @@ export const getCurrentMonth = () => {
   const { month } = getCurrentDate();
   return toTwoDigits(month.toString(), 2);
 };
+
+export const getMonthBoundaries = (year, monthString) => {
+  const parsedMonth = Number.parseInt(monthString, 10);
+
+  if (!Number.isFinite(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
+    throw new Error(`Invalid month value received: ${monthString}`);
+  }
+
+  const normalizedMonth = toTwoDigits(parsedMonth.toString(), 2);
+  const nextMonth = parsedMonth === 12 ? 1 : parsedMonth + 1;
+  const nextYear = parsedMonth === 12 ? year + 1 : year;
+  const normalizedNextMonth = toTwoDigits(nextMonth.toString(), 2);
+
+  return {
+    startDate: `${year}-${normalizedMonth}-01`,
+    exclusiveEndDate: `${nextYear}-${normalizedNextMonth}-01`,
+  };
+};

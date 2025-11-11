@@ -1,29 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { toTwoDigits } from "../utils/toTwoDigits";
 import { formatCurrencyJPY } from "../utils/currency";
+import { getMonthBoundaries } from "../utils/dateUtils";
 
 const ANONYMOUS_STORAGE_KEY = "receiptNote.availableBudget.anonymous";
 
 const getStorageKey = (userId) =>
   userId ? `receiptNote.availableBudget.${userId}` : ANONYMOUS_STORAGE_KEY;
-
-const getMonthBoundaries = (year, monthString) => {
-  const parsedMonth = Number.parseInt(monthString, 10);
-  if (!Number.isFinite(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
-    throw new Error(`Invalid month value received: ${monthString}`);
-  }
-
-  const startMonth = toTwoDigits(parsedMonth.toString(), 2);
-  const nextMonth = parsedMonth === 12 ? 1 : parsedMonth + 1;
-  const nextYear = parsedMonth === 12 ? year + 1 : year;
-  const normalizedNextMonth = toTwoDigits(nextMonth.toString(), 2);
-
-  return {
-    startDate: `${year}-${startMonth}-01`,
-    exclusiveEndDate: `${nextYear}-${normalizedNextMonth}-01`,
-  };
-};
 
 const parseBudgetSegments = (rawValue) => {
   const trimmed = rawValue.trim();

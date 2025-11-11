@@ -1,3 +1,4 @@
+/* eslint-env node */
 // api/register-expense.js
 
 import { createClient } from "@supabase/supabase-js";
