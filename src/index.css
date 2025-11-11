@@ -1,1 +1,61 @@
 @import "tailwindcss";
+
+:root {
+  --rn-card-animation-duration: 220ms;
+}
+
+.rn-card-item {
+  width: 100%;
+  height: 100%;
+  will-change: opacity, transform;
+}
+
+.rn-card-item-enter,
+.rn-card-item-exit {
+  animation-duration: var(
+    --rn-card-duration,
+    var(--rn-card-animation-duration)
+  );
+  animation-fill-mode: both;
+}
+
+.rn-card-item-enter {
+  animation-name: rn-card-fade-in;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rn-card-item-exit {
+  animation-name: rn-card-fade-out;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+@keyframes rn-card-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rn-card-fade-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rn-card-item-enter,
+  .rn-card-item-exit {
+    animation-duration: 0.001ms;
+    animation-iteration-count: 1;
+  }
+}

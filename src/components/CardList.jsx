@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import Card from "./Card";
 import EditCardModal from "./EditCardModal";
@@ -29,6 +29,8 @@ const DEFAULT_CATEGORIES = [
   },
 ];
 
+const CARD_ANIMATION_DURATION_MS = 220;
+
 const mapCategoryRow = (row) => ({
   id: row.id,
   svgName: row.icon ?? row.svgName,
@@ -46,9 +48,65 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
   const [detailCard, setDetailCard] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const userId = user?.id ?? null;
+  const animationTimersRef = useRef(new Map());
+
+  useEffect(() => {
+    return () => {
+      animationTimersRef.current.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      animationTimersRef.current.clear();
+    };
+  }, []);
+
+  const scheduleIdleState = (id) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const timers = animationTimersRef.current;
+    if (timers.has(id)) {
+      clearTimeout(timers.get(id));
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCards((prevCards) =>
+        prevCards.map((card) =>
+          card.id === id && card.animationState === "enter"
+            ? { ...card, animationState: "idle" }
+            : card
+        )
+      );
+      timers.delete(id);
+    }, CARD_ANIMATION_DURATION_MS);
+
+    timers.set(id, timeoutId);
+  };
+
+  const scheduleRemoval = (id) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const timers = animationTimersRef.current;
+    if (timers.has(id)) {
+      clearTimeout(timers.get(id));
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCards((prevCards) => prevCards.filter((card) => card.id !== id));
+      timers.delete(id);
+    }, CARD_ANIMATION_DURATION_MS);
+
+    timers.set(id, timeoutId);
+  };
 
   useEffect(() => {
     if (!userId) {
+      animationTimersRef.current.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      animationTimersRef.current.clear();
       setCards([]);
       return;
     }
@@ -94,14 +152,24 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
         }
 
         if (isMounted) {
-          setCards(inserted.map(mapCategoryRow));
+          const normalized = inserted.map((row) => ({
+            ...mapCategoryRow(row),
+            animationState: "enter",
+          }));
+          setCards(normalized);
+          normalized.forEach((card) => scheduleIdleState(card.id));
           setIsLoading(false);
         }
         return;
       }
 
       if (isMounted) {
-        setCards(data.map(mapCategoryRow));
+        const normalized = data.map((row) => ({
+          ...mapCategoryRow(row),
+          animationState: "enter",
+        }));
+        setCards(normalized);
+        normalized.forEach((card) => scheduleIdleState(card.id));
         setIsLoading(false);
       }
     };
@@ -134,8 +202,9 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
         throw error;
       }
 
-      const newCard = mapCategoryRow(data);
+      const newCard = { ...mapCategoryRow(data), animationState: "enter" };
       setCards((prev) => [...prev, newCard]);
+      scheduleIdleState(newCard.id);
       setEditingCard(newCard);
     } catch (error) {
       console.error("カテゴリの追加に失敗しました", error);
@@ -188,7 +257,12 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
         throw error;
       }
 
-      setCards((prev) => prev.filter((card) => card.id !== id));
+      setCards((prev) =>
+        prev.map((card) =>
+          card.id === id ? { ...card, animationState: "exit" } : card
+        )
+      );
+      scheduleRemoval(id);
 
       if (targetCard) {
         const { error: expenseError } = await supabase
@@ -242,7 +316,11 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
       }
 
       setCards((prev) =>
-        prev.map((card) => (card.id === id ? mapCategoryRow(data) : card))
+        prev.map((card) =>
+          card.id === id
+            ? { ...card, ...mapCategoryRow(data), animationState: "idle" }
+            : card
+        )
       );
       setEditingCard(null);
 
@@ -322,20 +400,38 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
             カテゴリを読み込み中です...
           </div>
         ) : (
-          cards.map((card) => (
-            <Card
-              key={card.id}
-              card={card}
-              selectedYear={selectedYear}
-              selectedMonth={selectedMonth}
-              onDelete={deleteCard}
-              onEdit={() => handleEdit(card)}
-              userId={userId}
-              onAddExpense={() => handleOpenExpenseModal(card)}
-              refreshKey={refreshKey}
-              onSelect={userId ? handleCardSelect : undefined}
-            />
-          ))
+          cards.map((card) => {
+            const animationState = card.animationState ?? "idle";
+            const animationClass =
+              animationState === "enter"
+                ? "rn-card-item-enter"
+                : animationState === "exit"
+                ? "rn-card-item-exit"
+                : "";
+
+            return (
+              <div
+                key={card.id}
+                className={`rn-card-item ${animationClass}`.trim()}
+                data-animation-state={animationState}
+                style={{
+                  "--rn-card-duration": `${CARD_ANIMATION_DURATION_MS}ms`,
+                }}
+              >
+                <Card
+                  card={card}
+                  selectedYear={selectedYear}
+                  selectedMonth={selectedMonth}
+                  onDelete={deleteCard}
+                  onEdit={() => handleEdit(card)}
+                  userId={userId}
+                  onAddExpense={() => handleOpenExpenseModal(card)}
+                  refreshKey={refreshKey}
+                  onSelect={userId ? handleCardSelect : undefined}
+                />
+              </div>
+            );
+          })
         )}
         <button
           type="button"
