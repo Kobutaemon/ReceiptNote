@@ -2,19 +2,60 @@ import { useCallback, useRef } from "react";
 
 function useModalBackdropClose(onClose, { disabled = false } = {}) {
   const shouldCloseRef = useRef(false);
+  const pendingCleanupRef = useRef(null);
 
   const resetIntent = useCallback(() => {
     shouldCloseRef.current = false;
   }, []);
 
-  const handlePointerDown = useCallback(
-    (event) => {
-      if (disabled) {
-        resetIntent();
+  const blockNextClick = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    pendingCleanupRef.current?.();
+
+    let active = true;
+    let timeoutId = null;
+
+    function cleanup() {
+      if (!active) {
         return;
       }
+      active = false;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+      window.removeEventListener("click", handleClickCapture, true);
+      if (pendingCleanupRef.current === cleanup) {
+        pendingCleanupRef.current = null;
+      }
+    }
 
+    function handleClickCapture(event) {
+      if (!active) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      cleanup();
+    }
+
+    window.addEventListener("click", handleClickCapture, true);
+    timeoutId = window.setTimeout(cleanup, 1000);
+    pendingCleanupRef.current = cleanup;
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (event) => {
       if (event.target === event.currentTarget) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (disabled) {
+          resetIntent();
+          return;
+        }
+
         shouldCloseRef.current = true;
       } else {
         resetIntent();
@@ -25,13 +66,18 @@ function useModalBackdropClose(onClose, { disabled = false } = {}) {
 
   const handlePointerUp = useCallback(
     (event) => {
-      if (disabled) {
+      const isBackdropTarget = event.target === event.currentTarget;
+
+      if (!isBackdropTarget) {
         resetIntent();
         return;
       }
 
-      const isBackdropTarget = event.target === event.currentTarget;
-      if (!isBackdropTarget) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (disabled) {
+        blockNextClick();
         resetIntent();
         return;
       }
@@ -41,10 +87,11 @@ function useModalBackdropClose(onClose, { disabled = false } = {}) {
         return;
       }
 
+      blockNextClick();
       resetIntent();
       onClose?.();
     },
-    [disabled, onClose, resetIntent]
+    [blockNextClick, disabled, onClose, resetIntent]
   );
 
   const handlePointerCancel = useCallback(() => {
