@@ -1,30 +1,13 @@
 import Dashboard from "./pages/Dashboard.jsx";
 import NotFound from "./pages/NotFound.jsx";
-
-// 以下Supabaseのためのimport
-import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabaseClient.js";
 import { Auth } from "@supabase/auth-ui-react";
-
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { ja } from "./lib/ja.js";
+import { useAuth } from "./lib/AuthProvider.jsx";
 
 function App() {
-  const [session, setSession] = useState(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { session, status } = useAuth();
 
   const handleLogout = async () => {
     const shouldSignOut = window.confirm("ログアウトしますか？");
@@ -41,6 +24,18 @@ function App() {
       alert("ログアウト中にエラーが発生しました: " + error.message);
     }
   };
+
+  if (status === "checking") {
+    return (
+      <div
+        className="flex h-screen items-center justify-center bg-gray-100 text-gray-600"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        セッションを確認しています...
+      </div>
+    );
+  }
 
   if (!session) {
     return (
