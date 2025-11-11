@@ -1,8 +1,9 @@
 // src/components/EditCardModal.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import * as LucideIcons from "lucide-react";
 import { iconMap } from "../lib/iconMap";
 import { svgColorMap } from "../utils/colorMap";
+import useModalBackdropClose from "../hooks/useModalBackdropClose";
 
 const { Save, X } = LucideIcons;
 
@@ -13,6 +14,12 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
   const modalRef = useRef(null);
   const previouslyFocusedElementRef = useRef(null);
   const previousBodyOverflowRef = useRef("");
+
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  const backdropHandlers = useModalBackdropClose(handleClose);
 
   useEffect(() => {
     if (card) {
@@ -94,7 +101,7 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
         isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       aria-hidden={!isOpen}
-      onClick={onClose}
+      {...backdropHandlers}
     >
       <div
         ref={modalRef}
@@ -191,7 +198,7 @@ function EditCardModal({ card, isOpen, onClose, onSave }) {
         {/* Action Buttons */}
         <div className="flex justify-end gap-4 mt-8">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 flex items-center gap-2"
           >
             <X size={16} /> キャンセル

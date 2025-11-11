@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import * as LucideIcons from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { getTodayDateJP } from "../utils/dateUtils";
 import { svgColorMap } from "../utils/colorMap";
+import useModalBackdropClose from "../hooks/useModalBackdropClose";
 
 const { Save, X } = LucideIcons;
 
@@ -24,6 +25,17 @@ function AddExpenseModal({
   const previouslyFocusedElementRef = useRef(null);
   const previousBodyOverflowRef = useRef("");
   const wasOpenRef = useRef(false);
+
+  const handleClose = useCallback(() => {
+    if (isSaving) {
+      return;
+    }
+    onClose();
+  }, [isSaving, onClose]);
+
+  const backdropHandlers = useModalBackdropClose(handleClose, {
+    disabled: isSaving,
+  });
 
   useEffect(() => {
     if (isOpen && card) {
@@ -105,13 +117,6 @@ function AddExpenseModal({
     return () => clearTimeout(timer);
   }, [isOpen, onAfterClose]);
 
-  const handleClose = () => {
-    if (isSaving) {
-      return;
-    }
-    onClose();
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -169,7 +174,7 @@ function AddExpenseModal({
         isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       aria-hidden={!isOpen}
-      onClick={handleClose}
+      {...backdropHandlers}
     >
       <div
         ref={modalRef}

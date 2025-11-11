@@ -163,10 +163,10 @@ function Card({
               <MoreVertical size={20} />
             </button>
             <div
-              className={`absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200 origin-top-right transition-all duration-150 ease-out ${
+              className={`absolute right-0 mt-2 w-48 rounded-md border border-gray-200 bg-white shadow-lg z-10 origin-top-right will-change-transform transition-all duration-200 ease-out motion-reduce:transition-none ${
                 isMenuOpen
-                  ? "scale-100 opacity-100"
-                  : "scale-95 opacity-0 pointer-events-none"
+                  ? "pointer-events-auto scale-100 opacity-100 translate-y-0"
+                  : "pointer-events-none scale-95 opacity-0 translate-y-1"
               }`}
               aria-hidden={!isMenuOpen}
             >

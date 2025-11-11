@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import * as LucideIcons from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { svgColorMap } from "../utils/colorMap";
 import { formatCurrencyJPY } from "../utils/currency";
 import { getMonthBoundaries } from "../utils/dateUtils";
 import EditExpenseModal from "./EditExpenseModal";
+import useModalBackdropClose from "../hooks/useModalBackdropClose";
 
 const TRANSITION_DURATION_MS = 250;
 
@@ -135,6 +136,16 @@ function CardDetailModal({
       setPendingDeleteId(null);
       onAfterClose?.();
     },
+  });
+
+  const handleBackdropClose = useCallback(() => {
+    if (!isLoading) {
+      onClose();
+    }
+  }, [isLoading, onClose]);
+
+  const backdropHandlers = useModalBackdropClose(handleBackdropClose, {
+    disabled: isLoading,
   });
 
   useEffect(() => {
@@ -302,11 +313,7 @@ function CardDetailModal({
         isOpen ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
       aria-hidden={!isOpen}
-      onClick={() => {
-        if (!isLoading) {
-          onClose();
-        }
-      }}
+      {...backdropHandlers}
     >
       <div
         ref={modalRef}
