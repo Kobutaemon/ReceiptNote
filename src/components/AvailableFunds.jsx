@@ -31,7 +31,12 @@ const parseBudgetSegments = (rawValue) => {
   return { sum: Math.round(total), isValid: true };
 };
 
-function AvailableFunds({ selectedYear, selectedMonth, userId, expensesVersion }) {
+function AvailableFunds({
+  selectedYear,
+  selectedMonth,
+  userId,
+  expensesVersion,
+}) {
   const [monthlyBudget, setMonthlyBudget] = useState(0);
   const [budgetInput, setBudgetInput] = useState("0");
   const [budgetError, setBudgetError] = useState("");

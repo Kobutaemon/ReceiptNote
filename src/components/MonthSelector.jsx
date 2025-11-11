@@ -39,9 +39,10 @@ function MonthSelector({
     return items;
   }, [selectedYear]);
 
-  const years = Array.isArray(yearOptions) && yearOptions.length > 0
-    ? yearOptions
-    : fallbackYears;
+  const years =
+    Array.isArray(yearOptions) && yearOptions.length > 0
+      ? yearOptions
+      : fallbackYears;
 
   return (
     <div className="flex justify-center mx-auto mt-10">
