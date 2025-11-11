@@ -18,11 +18,6 @@ function Dashboard({ user, onLogout }) {
         <h1 className="text-3xl text-center pt-4 font-bold">ReceiptNote</h1>
       </header>
       <main>
-        <AvailableFunds
-          selectedMonth={selectedMonth}
-          userId={user?.id ?? null}
-          expensesVersion={expensesVersion}
-        />
         <MonthSelector
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
@@ -31,6 +26,12 @@ function Dashboard({ user, onLogout }) {
           selectedMonth={selectedMonth}
           user={user}
           onExpensesMutated={handleExpensesMutated}
+        />
+        <hr className="mx-6 mt-8 border-t border-gray-400" aria-hidden="true" />
+        <AvailableFunds
+          selectedMonth={selectedMonth}
+          userId={user?.id ?? null}
+          expensesVersion={expensesVersion}
         />
       </main>
       {onLogout && (

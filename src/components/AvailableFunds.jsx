@@ -25,6 +25,29 @@ const getMonthBoundaries = (year, monthString) => {
   };
 };
 
+const parseBudgetSegments = (rawValue) => {
+  const trimmed = rawValue.trim();
+
+  if (trimmed === "") {
+    return { sum: 0, isValid: true };
+  }
+
+  const segments = trimmed.split(/\s+/);
+  let total = 0;
+
+  for (const segment of segments) {
+    const numericValue = Number(segment);
+
+    if (!Number.isFinite(numericValue) || numericValue < 0) {
+      return { sum: 0, isValid: false };
+    }
+
+    total += numericValue;
+  }
+
+  return { sum: Math.round(total), isValid: true };
+};
+
 function AvailableFunds({ selectedMonth, userId, expensesVersion }) {
   const [monthlyBudget, setMonthlyBudget] = useState(0);
   const [budgetInput, setBudgetInput] = useState("0");
@@ -209,20 +232,14 @@ function AvailableFunds({ selectedMonth, userId, expensesVersion }) {
     const { value } = event.target;
     setBudgetInput(value);
 
-    if (value === "") {
-      setMonthlyBudget(0);
-      setBudgetError("");
+    const { sum, isValid } = parseBudgetSegments(value);
+
+    if (!isValid) {
+      setBudgetError("0以上の数値をスペースで区切って入力してください。");
       return;
     }
 
-    const numericValue = Number(value);
-
-    if (!Number.isFinite(numericValue) || numericValue < 0) {
-      setBudgetError("0以上の数値を入力してください。");
-      return;
-    }
-
-    setMonthlyBudget(Math.round(numericValue));
+    setMonthlyBudget(sum);
     setBudgetError("");
   };
 
@@ -231,11 +248,22 @@ function AvailableFunds({ selectedMonth, userId, expensesVersion }) {
   };
 
   const handleBudgetBlur = () => {
-    if (budgetInput === "") {
+    if (budgetInput.trim() === "") {
       setMonthlyBudget(0);
       setBudgetInput("0");
       setBudgetError("");
+      return;
     }
+
+    const { isValid } = parseBudgetSegments(budgetInput);
+
+    if (!isValid) {
+      setBudgetInput(String(monthlyBudget));
+      setBudgetError("");
+      return;
+    }
+
+    setBudgetInput(budgetInput.trim());
   };
 
   const formattedAvailable = formatCurrencyJPY(availableAmount);
@@ -279,10 +307,9 @@ function AvailableFunds({ selectedMonth, userId, expensesVersion }) {
             </label>
             <input
               id="available-budget"
-              type="number"
-              min="0"
-              step="1"
+              type="text"
               inputMode="numeric"
+              pattern="[0-9 ]*"
               value={budgetInput}
               onChange={handleBudgetInputChange}
               onBlur={handleBudgetBlur}
@@ -295,7 +322,7 @@ function AvailableFunds({ selectedMonth, userId, expensesVersion }) {
               </p>
             ) : (
               <p className="mt-1 text-xs text-gray-500">
-                入力すると即座に反映され、ブラウザにのみ保存されます。
+                スペースで区切った数値は合計され、結果が即座に反映されます（ブラウザにのみ保存されます）。
               </p>
             )}
           </div>
