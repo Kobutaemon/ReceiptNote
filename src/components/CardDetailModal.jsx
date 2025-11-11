@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import { svgColorMap } from "../utils/colorMap";
 import { formatCurrencyJPY } from "../utils/currency";
 import { getMonthBoundaries } from "../utils/dateUtils";
+import EditExpenseModal from "./EditExpenseModal";
 
 const TRANSITION_DURATION_MS = 250;
 
@@ -115,15 +116,22 @@ function CardDetailModal({
   isOpen,
   onClose,
   onAfterClose,
+  onExpenseMutated,
 }) {
   const [expenses, setExpenses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const modalRef = useModalLifecycle(isOpen, {
     onClose,
     onAfterClose: () => {
       setExpenses([]);
       setError("");
+      setEditingExpense(null);
+      setIsEditModalOpen(false);
+      setPendingDeleteId(null);
       onAfterClose?.();
     },
   });
@@ -217,6 +225,73 @@ function CardDetailModal({
     }
   }, [selectedMonth]);
 
+  const handleOpenEditModal = (expense) => {
+    setEditingExpense(expense);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const handleEditModalAfterClose = () => {
+    setEditingExpense(null);
+  };
+
+  const handleExpenseUpdated = (updatedExpense) => {
+    setExpenses((prev) =>
+      prev.map((expense) =>
+        expense.id === updatedExpense.id
+          ? { ...expense, ...updatedExpense }
+          : expense
+      )
+    );
+    onExpenseMutated?.();
+  };
+
+  const handleDeleteExpense = async (expense) => {
+    if (!userId || !expense) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "この支出を削除しますか？この操作は元に戻せません。"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setPendingDeleteId(expense.id);
+
+    try {
+      const { error: deleteError } = await supabase
+        .from("expenses")
+        .delete()
+        .eq("id", expense.id)
+        .eq("user_id", userId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      setExpenses((prev) => prev.filter((item) => item.id !== expense.id));
+
+      if (editingExpense?.id === expense.id) {
+        setIsEditModalOpen(false);
+        setEditingExpense(null);
+      }
+
+      onExpenseMutated?.();
+      alert("支出を削除しました。");
+    } catch (deleteError) {
+      console.error("支出の削除に失敗しました", deleteError);
+      alert("支出の削除に失敗しました。");
+    } finally {
+      setPendingDeleteId(null);
+    }
+  };
+
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 backdrop-blur-sm transition-opacity duration-200 ${
@@ -298,14 +373,37 @@ function CardDetailModal({
             <ul className="divide-y divide-gray-100">
               {expenses.map((expense) => (
                 <li key={expense.id} className="px-6 py-4">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {formatCurrencyJPY(expense.price ?? 0)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {buildDisplayDate(expense.expense_date)}
-                      </p>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {formatCurrencyJPY(expense.price ?? 0)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {buildDisplayDate(expense.expense_date)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(expense)}
+                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={isLoading || pendingDeleteId === expense.id}
+                        >
+                          <LucideIcons.Pencil size={14} /> 編集
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExpense(expense)}
+                          className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={isLoading || pendingDeleteId === expense.id}
+                        >
+                          <LucideIcons.Trash2 size={14} />
+                          {pendingDeleteId === expense.id
+                            ? "削除中..."
+                            : "削除"}
+                        </button>
+                      </div>
                     </div>
                     <p className="text-sm text-gray-600">
                       {expense.description?.trim() || "(メモなし)"}
@@ -316,6 +414,15 @@ function CardDetailModal({
             </ul>
           )}
         </section>
+        <EditExpenseModal
+          isOpen={isEditModalOpen}
+          expense={editingExpense}
+          card={card}
+          userId={userId}
+          onClose={handleCloseEditModal}
+          onAfterClose={handleEditModalAfterClose}
+          onSaved={handleExpenseUpdated}
+        />
       </div>
     </div>
   );

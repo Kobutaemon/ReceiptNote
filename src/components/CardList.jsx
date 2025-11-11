@@ -288,10 +288,14 @@ function CardList({ selectedMonth, user, onExpensesMutated }) {
     setExpenseModalCard(null);
   };
 
-  const handleExpenseSaved = () => {
-    setIsExpenseModalOpen(false);
+  const handleExpenseMutated = () => {
     setRefreshKey((prev) => prev + 1);
     onExpensesMutated?.();
+  };
+
+  const handleExpenseSaved = () => {
+    setIsExpenseModalOpen(false);
+    handleExpenseMutated();
   };
 
   const handleCardSelect = (cardToShow) => {
@@ -363,6 +367,7 @@ function CardList({ selectedMonth, user, onExpensesMutated }) {
         isOpen={isDetailModalOpen}
         onClose={handleDetailClose}
         onAfterClose={handleDetailAfterClose}
+        onExpenseMutated={handleExpenseMutated}
       />
     </>
   );
