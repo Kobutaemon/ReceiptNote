@@ -374,7 +374,7 @@ function CardDetailModal({
               {expenses.map((expense) => (
                 <li key={expense.id} className="px-6 py-4">
                   <div className="flex flex-col gap-2">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
                           {formatCurrencyJPY(expense.price ?? 0)}
@@ -383,22 +383,22 @@ function CardDetailModal({
                           {buildDisplayDate(expense.expense_date)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => handleOpenEditModal(expense)}
-                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={isLoading || pendingDeleteId === expense.id}
                         >
-                          <LucideIcons.Pencil size={14} /> 編集
+                          <LucideIcons.Pencil size={16} /> 編集
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteExpense(expense)}
-                          className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={isLoading || pendingDeleteId === expense.id}
                         >
-                          <LucideIcons.Trash2 size={14} />
+                          <LucideIcons.Trash2 size={16} />
                           {pendingDeleteId === expense.id
                             ? "削除中..."
                             : "削除"}
