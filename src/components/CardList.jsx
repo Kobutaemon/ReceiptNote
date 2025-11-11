@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import Card from "./Card";
 import EditCardModal from "./EditCardModal";
 import AddExpenseModal from "./AddExpenseModal";
 import CardDetailModal from "./CardDetailModal";
 import { supabase } from "../lib/supabaseClient";
+import { getMonthBoundaries } from "../utils/dateUtils";
 
 const DEFAULT_CATEGORIES = [
   {
@@ -36,7 +37,72 @@ const mapCategoryRow = (row) => ({
   svgName: row.icon ?? row.svgName,
   svgColor: row.color ?? row.svgColor,
   cardTitle: row.title ?? row.cardTitle,
+  createdAt: row.created_at ?? row.createdAt ?? null,
 });
+
+const sortCardsByExpenseCount = (cards) => {
+  if (!Array.isArray(cards) || cards.length <= 1) {
+    return Array.isArray(cards) ? cards : [];
+  }
+
+  return [...cards].sort((a, b) => {
+    const aCount = a?.expenseCount ?? 0;
+    const bCount = b?.expenseCount ?? 0;
+
+    if (bCount !== aCount) {
+      return bCount - aCount;
+    }
+
+    const aIndex = Number.isFinite(a?.sortIndex) ? a.sortIndex : Infinity;
+    const bIndex = Number.isFinite(b?.sortIndex) ? b.sortIndex : Infinity;
+
+    if (aIndex !== bIndex) {
+      return aIndex - bIndex;
+    }
+
+    const aCreated = a?.createdAt ?? "";
+    const bCreated = b?.createdAt ?? "";
+
+    if (aCreated && bCreated && aCreated !== bCreated) {
+      return String(aCreated).localeCompare(String(bCreated));
+    }
+
+    const titleCompare = String(a?.cardTitle ?? "").localeCompare(
+      String(b?.cardTitle ?? ""),
+      "ja"
+    );
+
+    if (titleCompare !== 0) {
+      return titleCompare;
+    }
+
+    return String(a?.id ?? "").localeCompare(String(b?.id ?? ""), "ja");
+  });
+};
+
+const buildCardIdentityKey = (cards) => {
+  if (!Array.isArray(cards) || cards.length === 0) {
+    return "";
+  }
+
+  return cards
+    .map((card) => `${card?.id ?? ""}:${card?.cardTitle ?? ""}`)
+    .sort()
+    .join("|");
+};
+
+const calculateNextSortIndex = (cards) => {
+  if (!Array.isArray(cards) || cards.length === 0) {
+    return 0;
+  }
+
+  return (
+    cards.reduce((max, card) => {
+      const candidate = Number.isFinite(card?.sortIndex) ? card.sortIndex : -1;
+      return candidate > max ? candidate : max;
+    }, -1) + 1
+  );
+};
 
 function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
   const [cards, setCards] = useState([]);
@@ -49,6 +115,9 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const userId = user?.id ?? null;
   const animationTimersRef = useRef(new Map());
+  const countsRequestKeyRef = useRef("");
+
+  const cardIdentityKey = useMemo(() => buildCardIdentityKey(cards), [cards]);
 
   useEffect(() => {
     return () => {
@@ -108,6 +177,7 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
       });
       animationTimersRef.current.clear();
       setCards([]);
+      countsRequestKeyRef.current = "";
       return;
     }
 
@@ -152,24 +222,30 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
         }
 
         if (isMounted) {
-          const normalized = inserted.map((row) => ({
+          const normalized = inserted.map((row, index) => ({
             ...mapCategoryRow(row),
             animationState: "enter",
+            expenseCount: 0,
+            sortIndex: index,
           }));
-          setCards(normalized);
-          normalized.forEach((card) => scheduleIdleState(card.id));
+          const sortedCards = sortCardsByExpenseCount(normalized);
+          setCards(sortedCards);
+          sortedCards.forEach((card) => scheduleIdleState(card.id));
           setIsLoading(false);
         }
         return;
       }
 
       if (isMounted) {
-        const normalized = data.map((row) => ({
+        const normalized = data.map((row, index) => ({
           ...mapCategoryRow(row),
           animationState: "enter",
+          expenseCount: 0,
+          sortIndex: index,
         }));
-        setCards(normalized);
-        normalized.forEach((card) => scheduleIdleState(card.id));
+        const sortedCards = sortCardsByExpenseCount(normalized);
+        setCards(sortedCards);
+        sortedCards.forEach((card) => scheduleIdleState(card.id));
         setIsLoading(false);
       }
     };
@@ -180,6 +256,112 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
       isMounted = false;
     };
   }, [userId]);
+
+  useEffect(() => {
+    if (!userId || !selectedYear || !selectedMonth || cards.length === 0) {
+      countsRequestKeyRef.current = "";
+      return;
+    }
+
+    if (!cardIdentityKey) {
+      countsRequestKeyRef.current = "";
+      return;
+    }
+
+    const requestKey = `${userId}-${selectedYear}-${selectedMonth}-${refreshKey}-${cardIdentityKey}`;
+    if (countsRequestKeyRef.current === requestKey) {
+      return;
+    }
+
+    countsRequestKeyRef.current = requestKey;
+    let isActive = true;
+
+    const fetchCounts = async () => {
+      let monthRange;
+      try {
+        monthRange = getMonthBoundaries(selectedYear, selectedMonth);
+      } catch (rangeError) {
+        console.error("月次の支出件数を取得できませんでした", rangeError);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("category")
+        .eq("user_id", userId)
+        .gte("expense_date", monthRange.startDate)
+        .lt("expense_date", monthRange.exclusiveEndDate);
+
+      if (!isActive) {
+        return;
+      }
+
+      if (error) {
+        console.error("カテゴリ別の支出件数取得に失敗しました", error);
+        return;
+      }
+
+      const counts = Object.create(null);
+      (data ?? []).forEach((row) => {
+        const key = row?.category;
+        if (!key) {
+          return;
+        }
+        counts[key] = (counts[key] ?? 0) + 1;
+      });
+
+      setCards((prevCards) => {
+        if (!isActive || prevCards.length === 0) {
+          return prevCards;
+        }
+
+        const hasExiting = prevCards.some(
+          (card) => card.animationState === "exit"
+        );
+
+        if (hasExiting) {
+          return prevCards;
+        }
+
+        let countsChanged = false;
+        const enriched = prevCards.map((card) => {
+          const nextCount = counts[card.cardTitle] ?? 0;
+          const currentCount = card.expenseCount ?? 0;
+
+          if (currentCount !== nextCount || card.expenseCount === undefined) {
+            countsChanged = true;
+            return { ...card, expenseCount: nextCount };
+          }
+
+          return card;
+        });
+
+        const sorted = sortCardsByExpenseCount(enriched);
+        const orderChanged = sorted.some(
+          (card, index) => card.id !== prevCards[index]?.id
+        );
+
+        if (!countsChanged && !orderChanged) {
+          return prevCards;
+        }
+
+        return sorted;
+      });
+    };
+
+    fetchCounts();
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    userId,
+    selectedYear,
+    selectedMonth,
+    refreshKey,
+    cardIdentityKey,
+    cards.length,
+  ]);
 
   const addCard = async () => {
     if (!userId) {
@@ -202,10 +384,24 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
         throw error;
       }
 
-      const newCard = { ...mapCategoryRow(data), animationState: "enter" };
-      setCards((prev) => [...prev, newCard]);
-      scheduleIdleState(newCard.id);
-      setEditingCard(newCard);
+      const newCardBase = {
+        ...mapCategoryRow(data),
+        animationState: "enter",
+        expenseCount: 0,
+      };
+
+      let createdCard = null;
+      setCards((prev) => {
+        const nextSortIndex = calculateNextSortIndex(prev);
+        const candidate = { ...newCardBase, sortIndex: nextSortIndex };
+        createdCard = candidate;
+        return sortCardsByExpenseCount([...prev, candidate]);
+      });
+
+      if (createdCard) {
+        scheduleIdleState(createdCard.id);
+        setEditingCard(createdCard);
+      }
     } catch (error) {
       console.error("カテゴリの追加に失敗しました", error);
       alert("カテゴリの追加に失敗しました。");
