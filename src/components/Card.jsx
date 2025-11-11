@@ -3,11 +3,13 @@ import * as LucideIcons from "lucide-react";
 import { svgColorMap } from "../utils/colorMap";
 import { supabase } from "../lib/supabaseClient";
 import { formatCurrencyJPY } from "../utils/currency";
+import { getMonthBoundaries } from "../utils/dateUtils";
 
 const { Trash2, Edit, MoreVertical, Plus } = LucideIcons;
 
 function Card({
   card,
+  selectedYear,
   selectedMonth,
   onDelete,
   onEdit,
@@ -23,22 +25,27 @@ function Card({
 
   useEffect(() => {
     const fetchTotal = async () => {
-      const currentYear = new Date().getFullYear();
-      const startDate = `${currentYear}-${selectedMonth}-01`;
-      const nextMonth =
-        selectedMonth === "12"
-          ? "01"
-          : String(parseInt(selectedMonth, 10) + 1).padStart(2, "0");
-      const nextYear = selectedMonth === "12" ? currentYear + 1 : currentYear;
-      const endDate = `${nextYear}-${nextMonth}-01`;
+      if (!selectedYear) {
+        setCardTotal(0);
+        return;
+      }
+
+      let dateRange;
+      try {
+        dateRange = getMonthBoundaries(selectedYear, selectedMonth);
+      } catch (rangeError) {
+        console.error("Invalid year/month provided", rangeError);
+        setCardTotal(0);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("expenses")
         .select("price")
         .eq("user_id", userId)
         .eq("category", card.cardTitle)
-        .gte("expense_date", startDate)
-        .lt("expense_date", endDate);
+        .gte("expense_date", dateRange.startDate)
+        .lt("expense_date", dateRange.exclusiveEndDate);
 
       if (error) {
         console.error(`Error fetching data for ${card.cardTitle}:`, error);
@@ -57,7 +64,7 @@ function Card({
     if (card.cardTitle) {
       fetchTotal();
     }
-  }, [selectedMonth, card.cardTitle, userId, refreshKey]);
+  }, [selectedYear, selectedMonth, card.cardTitle, userId, refreshKey]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

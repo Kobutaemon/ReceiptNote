@@ -112,6 +112,7 @@ const buildDisplayDate = (isoDate) => {
 function CardDetailModal({
   card,
   userId,
+  selectedYear,
   selectedMonth,
   isOpen,
   onClose,
@@ -137,7 +138,7 @@ function CardDetailModal({
   });
 
   useEffect(() => {
-    if (!isOpen || !card || !userId || !selectedMonth) {
+    if (!isOpen || !card || !userId || !selectedMonth || !selectedYear) {
       return;
     }
 
@@ -148,9 +149,8 @@ function CardDetailModal({
       setError("");
 
       try {
-        const queryYear = new Date().getFullYear();
         const { startDate, exclusiveEndDate } = getMonthBoundaries(
-          queryYear,
+          selectedYear,
           selectedMonth
         );
 
@@ -193,7 +193,7 @@ function CardDetailModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, card, userId, selectedMonth]);
+  }, [isOpen, card, userId, selectedMonth, selectedYear]);
 
   const total = useMemo(() => {
     if (!expenses.length) {
@@ -213,17 +213,21 @@ function CardDetailModal({
       return "";
     }
 
+    if (!selectedYear) {
+      return `${selectedMonth}月`;
+    }
+
     try {
       const monthNumber = Number.parseInt(selectedMonth, 10);
       if (!Number.isFinite(monthNumber)) {
-        return `${selectedMonth}月`;
+        return `${selectedYear}年${selectedMonth}月`;
       }
-      return `${monthNumber}月の内訳`;
+      return `${selectedYear}年${monthNumber}月の内訳`;
     } catch (formatError) {
       console.warn("Failed to format month label", formatError);
-      return `${selectedMonth}月`;
+      return `${selectedYear}年${selectedMonth}月`;
     }
-  }, [selectedMonth]);
+  }, [selectedYear, selectedMonth]);
 
   const handleOpenEditModal = (expense) => {
     setEditingExpense(expense);

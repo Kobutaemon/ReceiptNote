@@ -36,7 +36,7 @@ const mapCategoryRow = (row) => ({
   cardTitle: row.title ?? row.cardTitle,
 });
 
-function CardList({ selectedMonth, user, onExpensesMutated }) {
+function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
   const [cards, setCards] = useState([]);
   const [editingCard, setEditingCard] = useState(null);
   const [expenseModalCard, setExpenseModalCard] = useState(null);
@@ -326,6 +326,7 @@ function CardList({ selectedMonth, user, onExpensesMutated }) {
             <Card
               key={card.id}
               card={card}
+              selectedYear={selectedYear}
               selectedMonth={selectedMonth}
               onDelete={deleteCard}
               onEdit={() => handleEdit(card)}
@@ -363,6 +364,7 @@ function CardList({ selectedMonth, user, onExpensesMutated }) {
       <CardDetailModal
         card={detailCard}
         userId={userId}
+        selectedYear={selectedYear}
         selectedMonth={selectedMonth}
         isOpen={isDetailModalOpen}
         onClose={handleDetailClose}

@@ -20,12 +20,22 @@ export const getTodayDateJP = () => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+export const getCurrentYear = () => {
+  const { year } = getCurrentDate();
+  return year.toString();
+};
+
 export const getCurrentMonth = () => {
   const { month } = getCurrentDate();
   return toTwoDigits(month.toString(), 2);
 };
 
-export const getMonthBoundaries = (year, monthString) => {
+export const getMonthBoundaries = (yearValue, monthString) => {
+  const parsedYear = Number.parseInt(yearValue, 10);
+  if (!Number.isFinite(parsedYear) || parsedYear < 0) {
+    throw new Error(`Invalid year value received: ${yearValue}`);
+  }
+
   const parsedMonth = Number.parseInt(monthString, 10);
 
   if (!Number.isFinite(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
@@ -34,11 +44,11 @@ export const getMonthBoundaries = (year, monthString) => {
 
   const normalizedMonth = toTwoDigits(parsedMonth.toString(), 2);
   const nextMonth = parsedMonth === 12 ? 1 : parsedMonth + 1;
-  const nextYear = parsedMonth === 12 ? year + 1 : year;
+  const nextYear = parsedMonth === 12 ? parsedYear + 1 : parsedYear;
   const normalizedNextMonth = toTwoDigits(nextMonth.toString(), 2);
 
   return {
-    startDate: `${year}-${normalizedMonth}-01`,
+    startDate: `${parsedYear}-${normalizedMonth}-01`,
     exclusiveEndDate: `${nextYear}-${normalizedNextMonth}-01`,
   };
 };

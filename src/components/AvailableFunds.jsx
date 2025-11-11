@@ -31,7 +31,7 @@ const parseBudgetSegments = (rawValue) => {
   return { sum: Math.round(total), isValid: true };
 };
 
-function AvailableFunds({ selectedMonth, userId, expensesVersion }) {
+function AvailableFunds({ selectedYear, selectedMonth, userId, expensesVersion }) {
   const [monthlyBudget, setMonthlyBudget] = useState(0);
   const [budgetInput, setBudgetInput] = useState("0");
   const [budgetError, setBudgetError] = useState("");
@@ -130,7 +130,7 @@ function AvailableFunds({ selectedMonth, userId, expensesVersion }) {
   }, [monthlyBudget, hasLoadedBudget, storageKey]);
 
   useEffect(() => {
-    if (!selectedMonth) {
+    if (!selectedMonth || !selectedYear) {
       setMonthlyExpenses(0);
       setExpensesError("");
       setIsExpensesLoading(false);
@@ -151,9 +151,8 @@ function AvailableFunds({ selectedMonth, userId, expensesVersion }) {
       setExpensesError("");
 
       try {
-        const queryYear = new Date().getFullYear();
         const { startDate, exclusiveEndDate } = getMonthBoundaries(
-          queryYear,
+          selectedYear,
           selectedMonth
         );
 
@@ -201,7 +200,7 @@ function AvailableFunds({ selectedMonth, userId, expensesVersion }) {
     return () => {
       isMounted = false;
     };
-  }, [userId, selectedMonth, expensesVersion]);
+  }, [userId, selectedYear, selectedMonth, expensesVersion]);
 
   const availableAmount = useMemo(
     () => monthlyBudget - monthlyExpenses,

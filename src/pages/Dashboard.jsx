@@ -2,9 +2,10 @@ import { useCallback, useState } from "react";
 import CardList from "../components/CardList";
 import MonthSelector from "../components/MonthSelector";
 import AvailableFunds from "../components/AvailableFunds";
-import { getCurrentMonth } from "../utils/dateUtils";
+import { getCurrentMonth, getCurrentYear } from "../utils/dateUtils";
 
 function Dashboard({ user, onLogout }) {
+  const [selectedYear, setSelectedYear] = useState(getCurrentYear());
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [expensesVersion, setExpensesVersion] = useState(0);
 
@@ -19,16 +20,20 @@ function Dashboard({ user, onLogout }) {
       </header>
       <main>
         <MonthSelector
+          selectedYear={selectedYear}
           selectedMonth={selectedMonth}
+          onYearChange={setSelectedYear}
           onMonthChange={setSelectedMonth}
         />
         <CardList
+          selectedYear={selectedYear}
           selectedMonth={selectedMonth}
           user={user}
           onExpensesMutated={handleExpensesMutated}
         />
         <hr className="mx-6 mt-8 border-t border-gray-400" aria-hidden="true" />
         <AvailableFunds
+          selectedYear={selectedYear}
           selectedMonth={selectedMonth}
           userId={user?.id ?? null}
           expensesVersion={expensesVersion}
