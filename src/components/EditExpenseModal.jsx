@@ -178,7 +178,7 @@ function EditExpenseModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 backdrop-blur-sm transition-opacity duration-200 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 backdrop-blur-sm transition-opacity duration-200 rounded-lg ${
         isOpen ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
       aria-hidden={!isOpen}
