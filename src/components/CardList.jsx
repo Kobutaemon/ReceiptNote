@@ -4,6 +4,7 @@ import Card from "./Card";
 import EditCardModal from "./EditCardModal";
 import AddExpenseModal from "./AddExpenseModal";
 import CardDetailModal from "./CardDetailModal";
+import ExpenseDistributionChart from "./ExpenseDistributionChart";
 import { supabase } from "../lib/supabaseClient";
 import { getMonthBoundaries } from "../utils/dateUtils";
 
@@ -104,6 +105,52 @@ const calculateNextSortIndex = (cards) => {
   );
 };
 
+const sanitizeNumeric = (value) => {
+  if (Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return 0;
+};
+
+const areNumberRecordsEqual = (firstRecord, secondRecord) => {
+  if (firstRecord === secondRecord) {
+    return true;
+  }
+
+  const safeFirst = firstRecord ?? {};
+  const safeSecond = secondRecord ?? {};
+
+  const firstKeys = Object.keys(safeFirst);
+  const secondKeys = Object.keys(safeSecond);
+
+  if (firstKeys.length !== secondKeys.length) {
+    return false;
+  }
+
+  for (const key of firstKeys) {
+    if (!Object.prototype.hasOwnProperty.call(safeSecond, key)) {
+      return false;
+    }
+
+    const firstValue = sanitizeNumeric(safeFirst[key]);
+    const secondValue = sanitizeNumeric(safeSecond[key]);
+
+    if (!Object.is(firstValue, secondValue)) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
   const [cards, setCards] = useState([]);
   const [editingCard, setEditingCard] = useState(null);
@@ -111,6 +158,8 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [categoryTotals, setCategoryTotals] = useState(() => ({}));
+  const [isTotalsLoading, setIsTotalsLoading] = useState(false);
   const [detailCard, setDetailCard] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const userId = user?.id ?? null;
@@ -260,11 +309,15 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
   useEffect(() => {
     if (!userId || !selectedYear || !selectedMonth || cards.length === 0) {
       countsRequestKeyRef.current = "";
+      setCategoryTotals((prev) => (Object.keys(prev ?? {}).length ? {} : prev));
+      setIsTotalsLoading(false);
       return;
     }
 
     if (!cardIdentityKey) {
       countsRequestKeyRef.current = "";
+      setCategoryTotals((prev) => (Object.keys(prev ?? {}).length ? {} : prev));
+      setIsTotalsLoading(false);
       return;
     }
 
@@ -276,18 +329,23 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
     countsRequestKeyRef.current = requestKey;
     let isActive = true;
 
-    const fetchCounts = async () => {
+    const fetchCountsAndTotals = async () => {
+      setIsTotalsLoading(true);
+
       let monthRange;
       try {
         monthRange = getMonthBoundaries(selectedYear, selectedMonth);
       } catch (rangeError) {
         console.error("月次の支出件数を取得できませんでした", rangeError);
+        if (isActive) {
+          setIsTotalsLoading(false);
+        }
         return;
       }
 
       const { data, error } = await supabase
         .from("expenses")
-        .select("category")
+        .select("category, price")
         .eq("user_id", userId)
         .gte("expense_date", monthRange.startDate)
         .lt("expense_date", monthRange.exclusiveEndDate);
@@ -297,18 +355,28 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
       }
 
       if (error) {
-        console.error("カテゴリ別の支出件数取得に失敗しました", error);
+        console.error("カテゴリ別の支出情報取得に失敗しました", error);
+        setIsTotalsLoading(false);
         return;
       }
 
       const counts = Object.create(null);
+      const totals = Object.create(null);
+
       (data ?? []).forEach((row) => {
         const key = row?.category;
         if (!key) {
           return;
         }
+
+        const price = sanitizeNumeric(row?.price);
         counts[key] = (counts[key] ?? 0) + 1;
+        totals[key] = (totals[key] ?? 0) + price;
       });
+
+      setCategoryTotals((prev) =>
+        areNumberRecordsEqual(prev, totals) ? prev : totals
+      );
 
       setCards((prevCards) => {
         if (!isActive || prevCards.length === 0) {
@@ -347,9 +415,13 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
 
         return sorted;
       });
+
+      if (isActive) {
+        setIsTotalsLoading(false);
+      }
     };
 
-    fetchCounts();
+    fetchCountsAndTotals();
 
     return () => {
       isActive = false;
@@ -588,6 +660,29 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
     setDetailCard(null);
   };
 
+  const chartSegments = useMemo(() => {
+    if (!Array.isArray(cards) || cards.length === 0) {
+      return [];
+    }
+
+    return cards.map((card) => ({
+      id: card.id,
+      label: card.cardTitle,
+      value: sanitizeNumeric(categoryTotals?.[card.cardTitle]),
+      colorKey: card.svgColor,
+    }));
+  }, [cards, categoryTotals]);
+
+  const chartTotalAmount = useMemo(
+    () =>
+      chartSegments.reduce(
+        (sum, segment) =>
+          Number.isFinite(segment.value) ? sum + segment.value : sum,
+        0
+      ),
+    [chartSegments]
+  );
+
   return (
     <>
       <div className="grid auto-rows-fr grid-cols-1 gap-6 p-6 mt-10 md:grid-cols-2 lg:grid-cols-3">
@@ -624,6 +719,7 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
                   onAddExpense={() => handleOpenExpenseModal(card)}
                   refreshKey={refreshKey}
                   onSelect={userId ? handleCardSelect : undefined}
+                  prefetchedTotal={categoryTotals?.[card.cardTitle]}
                 />
               </div>
             );
@@ -639,6 +735,13 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
           <Plus size={40} className="text-gray-500" />
         </button>
       </div>
+      <ExpenseDistributionChart
+        segments={chartSegments}
+        totalAmount={chartTotalAmount}
+        isLoading={isLoading || isTotalsLoading}
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+      />
       <EditCardModal
         card={editingCard}
         isOpen={Boolean(editingCard)}

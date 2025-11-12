@@ -7,6 +7,21 @@ import { getMonthBoundaries } from "../utils/dateUtils";
 
 const { Trash2, Edit, MoreVertical, Plus } = LucideIcons;
 
+const resolveNumeric = (value) => {
+  if (Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return 0;
+};
+
 function Card({
   card,
   selectedYear,
@@ -17,11 +32,18 @@ function Card({
   onAddExpense,
   refreshKey,
   onSelect,
+  prefetchedTotal,
 }) {
-  const [cardTotal, setCardTotal] = useState(0);
+  const [cardTotal, setCardTotal] = useState(() =>
+    resolveNumeric(prefetchedTotal)
+  );
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const isSelectable = Boolean(onSelect);
+
+  useEffect(() => {
+    setCardTotal(resolveNumeric(prefetchedTotal));
+  }, [prefetchedTotal]);
 
   useEffect(() => {
     const fetchTotal = async () => {
@@ -61,10 +83,27 @@ function Card({
       return;
     }
 
-    if (card.cardTitle) {
-      fetchTotal();
+    if (!card.cardTitle) {
+      setCardTotal(0);
+      return;
     }
-  }, [selectedYear, selectedMonth, card.cardTitle, userId, refreshKey]);
+
+    const hasPrefetchedTotal =
+      prefetchedTotal !== undefined && prefetchedTotal !== null;
+
+    if (hasPrefetchedTotal) {
+      return;
+    }
+
+    fetchTotal();
+  }, [
+    selectedYear,
+    selectedMonth,
+    card.cardTitle,
+    userId,
+    refreshKey,
+    prefetchedTotal,
+  ]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
