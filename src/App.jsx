@@ -4,7 +4,7 @@ import { supabase } from "./lib/supabaseClient.js";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { ja } from "./lib/ja.js";
-import { useAuth } from "./lib/AuthProvider.jsx";
+import { useAuth } from "./lib/authContext.js";
 
 function App() {
   const { session, status } = useAuth();

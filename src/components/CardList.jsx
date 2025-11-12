@@ -169,11 +169,13 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
   const cardIdentityKey = useMemo(() => buildCardIdentityKey(cards), [cards]);
 
   useEffect(() => {
+    const timers = animationTimersRef.current;
+
     return () => {
-      animationTimersRef.current.forEach((timeoutId) => {
+      timers.forEach((timeoutId) => {
         clearTimeout(timeoutId);
       });
-      animationTimersRef.current.clear();
+      timers.clear();
     };
   }, []);
 
