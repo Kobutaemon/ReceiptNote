@@ -139,7 +139,7 @@ function ExpenseDistributionChart({
         <div>
           <h2 className="text-lg font-semibold text-gray-900">支出割合</h2>
           <p className="text-sm text-gray-500">
-            カテゴリごとの支出バランスをひと目で把握できます。
+            カテゴリごとの支出バランスを視覚的に分かりやすく！
           </p>
         </div>
         <span className="text-sm text-gray-400" aria-live="polite">

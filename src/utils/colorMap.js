@@ -26,8 +26,8 @@ export const btnColorMap = {
 };
 
 export const chartColorHexMap = {
-  blue: "#2563EB",
-  green: "#10B981",
+  blue: "#60A5FA",
+  green: "#34D399",
   gray: "#6B7280",
-  purple: "#7C3AED",
+  purple: "#A78BFA",
 };
