@@ -134,7 +134,10 @@ function ExpenseDistributionChart({
   const hasData = totalAmount > 0 && normalized.some((item) => item.value > 0);
 
   return (
-    <section className="mx-6 mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <section
+      id="tutorial-expense-chart"
+      className="mx-6 mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+    >
       <header className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">支出割合</h2>

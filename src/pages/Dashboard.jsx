@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import CardList from "../components/CardList";
 import MonthSelector from "../components/MonthSelector";
 import AvailableFunds from "../components/AvailableFunds";
 import { getCurrentMonth, getCurrentYear } from "../utils/dateUtils";
 import { supabase } from "../lib/supabaseClient";
+import TutorialGuide from "../components/TutorialGuide";
+
+const TUTORIAL_VERSION = "2025-11-guide-v1";
+const TUTORIAL_STORAGE_PREFIX = "receiptNote.tutorial.seen.";
 
 const buildYearRange = (startYear, endYear) => {
   const safeStart = Number.isFinite(startYear) ? startYear : endYear;
@@ -33,10 +37,107 @@ function Dashboard({ user, onLogout }) {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [expensesVersion, setExpensesVersion] = useState(0);
   const [yearOptions, setYearOptions] = useState([]);
+  const [isTutorialVisible, setIsTutorialVisible] = useState(false);
 
   const handleExpensesMutated = useCallback(() => {
     setExpensesVersion((prev) => prev + 1);
   }, []);
+
+  const tutorialStorageKey = useMemo(
+    () => `${TUTORIAL_STORAGE_PREFIX}${user?.id ?? "anonymous"}`,
+    [user?.id]
+  );
+
+  const tutorialSteps = useMemo(
+    () => [
+      {
+        elementId: "tutorial-card-grid",
+        title: "カテゴリ別カード",
+        description:
+          "各カードはカテゴリに対応しており、選択した年月の支出をまとめて確認できます。",
+      },
+      {
+        elementId: "tutorial-card-first-add",
+        title: "＋ボタンで支出追加",
+        description:
+          "カード右上の＋ボタンから、そのカテゴリに新しい支出を登録できます。",
+      },
+      {
+        elementId: "tutorial-card-first",
+        title: "カードを開いて管理",
+        description:
+          "カード自体をクリックすると、選択中の年月に登録した支出を閲覧・編集できます。",
+      },
+      {
+        elementId: "tutorial-card-first-menu",
+        title: "カードの編集メニュー",
+        description:
+          "カード右上のケバブメニュー（⋮）からカテゴリ名やアイコンなどを編集できます。",
+      },
+      {
+        elementId: "tutorial-card-grid",
+        title: "支出が多い順に整列",
+        description:
+          "カードは登録された支出が多いカテゴリほど上に表示されるよう並び替えられます。",
+      },
+      {
+        elementId: "tutorial-expense-chart",
+        title: "支出割合をチェック",
+        description:
+          "支出割合セクションでは、選択した年月のカテゴリ別支出を円グラフで把握できます。",
+      },
+      {
+        elementId: "tutorial-available-funds",
+        title: "現在使えるお金",
+        description:
+          "現在使えるお金セクションで手持ちの金額を入力すると、支出を差し引いた残額が自動計算されます。",
+      },
+    ],
+    []
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    let timeoutId = null;
+
+    try {
+      const storedVersion = window.localStorage.getItem(tutorialStorageKey);
+      if (storedVersion === TUTORIAL_VERSION) {
+        setIsTutorialVisible(false);
+      } else {
+        timeoutId = window.setTimeout(() => {
+          setIsTutorialVisible(true);
+        }, 300);
+      }
+    } catch (error) {
+      console.warn("チュートリアルの表示状態を確認できませんでした", error);
+      timeoutId = window.setTimeout(() => {
+        setIsTutorialVisible(true);
+      }, 300);
+    }
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [tutorialStorageKey]);
+
+  const handleTutorialClose = useCallback(() => {
+    setIsTutorialVisible(false);
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(tutorialStorageKey, TUTORIAL_VERSION);
+    } catch (error) {
+      console.warn("チュートリアルの表示状態を保存できませんでした", error);
+    }
+  }, [tutorialStorageKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -149,6 +250,11 @@ function Dashboard({ user, onLogout }) {
           selectedMonth={selectedMonth}
           userId={user?.id ?? null}
           expensesVersion={expensesVersion}
+        />
+        <TutorialGuide
+          show={isTutorialVisible}
+          steps={tutorialSteps}
+          onClose={handleTutorialClose}
         />
       </main>
       {onLogout && (

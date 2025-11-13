@@ -687,13 +687,16 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
 
   return (
     <>
-      <div className="grid auto-rows-fr grid-cols-1 gap-6 p-6 mt-10 md:grid-cols-2 lg:grid-cols-3">
+      <div
+        id="tutorial-card-grid"
+        className="grid auto-rows-fr grid-cols-1 gap-6 p-6 mt-10 md:grid-cols-2 lg:grid-cols-3"
+      >
         {isLoading ? (
           <div className="col-span-full flex justify-center py-12 text-gray-500">
             カテゴリを読み込み中です...
           </div>
         ) : (
-          cards.map((card) => {
+          cards.map((card, index) => {
             const animationState = card.animationState ?? "idle";
             const animationClass =
               animationState === "enter"
@@ -701,6 +704,15 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
                 : animationState === "exit"
                 ? "rn-card-item-exit"
                 : "";
+
+            const tutorialIds =
+              index === 0
+                ? {
+                    card: "tutorial-card-first",
+                    addButton: "tutorial-card-first-add",
+                    menuButton: "tutorial-card-first-menu",
+                  }
+                : undefined;
 
             return (
               <div
@@ -722,6 +734,7 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
                   refreshKey={refreshKey}
                   onSelect={userId ? handleCardSelect : undefined}
                   prefetchedTotal={categoryTotals?.[card.cardTitle]}
+                  tutorialIds={tutorialIds}
                 />
               </div>
             );

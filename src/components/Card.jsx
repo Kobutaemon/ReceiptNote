@@ -33,6 +33,7 @@ function Card({
   refreshKey,
   onSelect,
   prefetchedTotal,
+  tutorialIds,
 }) {
   const [cardTotal, setCardTotal] = useState(() =>
     resolveNumeric(prefetchedTotal)
@@ -154,6 +155,7 @@ function Card({
 
   return (
     <div
+      id={tutorialIds?.card}
       className={cardClassName}
       {...(isSelectable
         ? {
@@ -186,11 +188,13 @@ function Card({
             }}
             className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-gray-200 active:bg-gray-300"
             aria-label="支出を追加"
+            id={tutorialIds?.addButton}
           >
             <Plus size={20} />
           </button>
           <div className="relative" ref={menuRef}>
             <button
+              id={tutorialIds?.menuButton}
               type="button"
               onClick={(event) => {
                 event.stopPropagation();

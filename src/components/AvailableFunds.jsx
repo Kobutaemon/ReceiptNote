@@ -257,7 +257,7 @@ function AvailableFunds({
   const formattedExpenses = formatCurrencyJPY(monthlyExpenses);
 
   return (
-    <section className="px-6 pt-6">
+    <section id="tutorial-available-funds" className="px-6 pt-6">
       <div className="mx-auto flex max-w-4xl flex-col gap-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
