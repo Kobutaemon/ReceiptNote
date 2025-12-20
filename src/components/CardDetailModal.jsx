@@ -6,6 +6,7 @@ import { formatCurrencyJPY } from "../utils/currency";
 import { getMonthBoundaries } from "../utils/dateUtils";
 import EditExpenseModal from "./EditExpenseModal";
 import useModalBackdropClose from "../hooks/useModalBackdropClose";
+import { useToast } from "../lib/toastContext";
 
 const TRANSITION_DURATION_MS = 250;
 
@@ -126,6 +127,7 @@ function CardDetailModal({
   const [editingExpense, setEditingExpense] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const { showToast } = useToast();
   const modalRef = useModalLifecycle(isOpen, {
     onClose,
     onAfterClose: () => {
@@ -298,10 +300,10 @@ function CardDetailModal({
       }
 
       onExpenseMutated?.();
-      alert("支出を削除しました。");
+      showToast("支出を削除しました。", "success");
     } catch (deleteError) {
       console.error("支出の削除に失敗しました", deleteError);
-      alert("支出の削除に失敗しました。");
+      showToast("支出の削除に失敗しました。", "error");
     } finally {
       setPendingDeleteId(null);
     }

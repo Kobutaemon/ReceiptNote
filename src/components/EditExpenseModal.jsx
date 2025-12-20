@@ -5,6 +5,7 @@ import { svgColorMap } from "../utils/colorMap";
 import { formatCurrencyJPY } from "../utils/currency";
 import { getTodayDateJP } from "../utils/dateUtils";
 import useModalBackdropClose from "../hooks/useModalBackdropClose";
+import { useToast } from "../lib/toastContext";
 
 const { Save, X } = LucideIcons;
 
@@ -27,6 +28,7 @@ function EditExpenseModal({
   const previouslyFocusedElementRef = useRef(null);
   const previousBodyOverflowRef = useRef("");
   const wasOpenRef = useRef(false);
+  const { showToast } = useToast();
 
   const handleClose = useCallback(() => {
     if (isSaving) {
@@ -131,12 +133,12 @@ function EditExpenseModal({
     const numericPrice = Number(price);
 
     if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-      alert("金額は1以上の数値を入力してください。");
+      showToast("金額は1以上の数値を入力してください。", "warning");
       return;
     }
 
     if (!expenseDate) {
-      alert("日付を入力してください。");
+      showToast("日付を入力してください。", "warning");
       return;
     }
 
@@ -163,10 +165,10 @@ function EditExpenseModal({
 
       onSaved?.({ ...expense, ...data });
       onClose();
-      alert("支出を更新しました。");
+      showToast("支出を更新しました。", "success");
     } catch (updateError) {
       console.error("支出の更新に失敗しました", updateError);
-      alert("支出の更新に失敗しました。");
+      showToast("支出の更新に失敗しました。", "error");
     } finally {
       setIsSaving(false);
     }

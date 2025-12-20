@@ -5,9 +5,12 @@ import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { ja } from "./lib/ja.js";
 import { useAuth } from "./lib/authContext.js";
+import ToastProvider from "./lib/ToastProvider.jsx";
+import { useToast } from "./lib/toastContext.js";
 
-function App() {
+function AppContent() {
   const { session, status } = useAuth();
+  const { showToast } = useToast();
 
   const handleLogout = async () => {
     const shouldSignOut = window.confirm("ログアウトしますか？");
@@ -21,7 +24,7 @@ function App() {
         throw error;
       }
     } catch (error) {
-      alert("ログアウト中にエラーが発生しました: " + error.message);
+      showToast("ログアウト中にエラーが発生しました: " + error.message, "error");
     }
   };
 
@@ -74,6 +77,14 @@ function App() {
       </div>
     );
   }
+}
+
+function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
+  );
 }
 
 export default App;

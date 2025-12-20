@@ -7,6 +7,7 @@ import CardDetailModal from "./CardDetailModal";
 import ExpenseDistributionChart from "./ExpenseDistributionChart";
 import { supabase } from "../lib/supabaseClient";
 import { getMonthBoundaries } from "../utils/dateUtils";
+import { useToast } from "../lib/toastContext";
 
 const DEFAULT_CATEGORIES = [
   {
@@ -157,6 +158,7 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
   const [expenseModalCard, setExpenseModalCard] = useState(null);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [categoryTotals, setCategoryTotals] = useState(() => ({}));
   const [isTotalsLoading, setIsTotalsLoading] = useState(false);
@@ -478,7 +480,7 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
       }
     } catch (error) {
       console.error("カテゴリの追加に失敗しました", error);
-      alert("カテゴリの追加に失敗しました。");
+      showToast("カテゴリの追加に失敗しました。", "error");
     }
   };
 
@@ -556,7 +558,7 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
       return true;
     } catch (error) {
       console.error("カテゴリの削除に失敗しました", error);
-      alert("カテゴリの削除に失敗しました。");
+      showToast("カテゴリの削除に失敗しました。", "error");
       return false;
     }
   };
@@ -603,7 +605,7 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
 
         if (expenseError) {
           console.error("関連する支出の更新に失敗しました", expenseError);
-          alert("支出のカテゴリ更新に失敗しました。");
+          showToast("支出のカテゴリ更新に失敗しました。", "error");
         }
       }
 
@@ -611,7 +613,7 @@ function CardList({ selectedYear, selectedMonth, user, onExpensesMutated }) {
       onExpensesMutated?.();
     } catch (error) {
       console.error("カテゴリの更新に失敗しました", error);
-      alert("カテゴリの更新に失敗しました。");
+      showToast("カテゴリの更新に失敗しました。", "error");
     }
   };
 

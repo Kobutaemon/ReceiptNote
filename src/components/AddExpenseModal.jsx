@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import { getTodayDateJP } from "../utils/dateUtils";
 import { svgColorMap } from "../utils/colorMap";
 import useModalBackdropClose from "../hooks/useModalBackdropClose";
+import { useToast } from "../lib/toastContext";
 
 const { Save, X } = LucideIcons;
 
@@ -25,6 +26,7 @@ function AddExpenseModal({
   const previouslyFocusedElementRef = useRef(null);
   const previousBodyOverflowRef = useRef("");
   const wasOpenRef = useRef(false);
+  const { showToast } = useToast();
 
   const handleClose = useCallback(() => {
     if (isSaving) {
@@ -127,12 +129,12 @@ function AddExpenseModal({
     const numericPrice = Number(price);
 
     if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-      alert("金額は1以上の数値を入力してください。");
+      showToast("金額は1以上の数値を入力してください。", "warning");
       return;
     }
 
     if (!expenseDate) {
-      alert("日付を入力してください。");
+      showToast("日付を入力してください。", "warning");
       return;
     }
 
@@ -154,10 +156,10 @@ function AddExpenseModal({
       }
 
       onSaved();
-      alert("支出を登録しました。");
+      showToast("支出を登録しました。", "success");
     } catch (error) {
       console.error("支出の登録に失敗しました", error);
-      alert("支出の登録に失敗しました。");
+      showToast("支出の登録に失敗しました。", "error");
     } finally {
       setIsSaving(false);
     }
