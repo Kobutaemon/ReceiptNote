@@ -61,7 +61,7 @@ function Toast({ id, message, type = "success", onClose }) {
 
   return (
     <div
-      className={`mb-3 flex items-start gap-3 rounded-lg border px-4 py-3 shadow-lg transition-all duration-300 ${
+      className={`mb-3 flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg transition-all duration-300 ${
         toastConfig.bgColor
       } ${toastConfig.borderColor} ${
         isVisible && !isRemoving
