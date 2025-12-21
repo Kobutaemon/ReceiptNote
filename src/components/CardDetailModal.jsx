@@ -311,7 +311,7 @@ function CardDetailModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 backdrop-blur-sm transition-opacity duration-200 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-gray-500/80 transition-opacity duration-200 ${
         isOpen ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
       aria-hidden={!isOpen}

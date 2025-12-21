@@ -172,7 +172,7 @@ function AddExpenseModal({
 
   return (
     <div
-      className={`fixed inset-0 bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50 transition-opacity duration-300 ${
+      className={`fixed inset-0 bg-gray-500/80 flex justify-center items-center z-50 transition-opacity duration-300 ${
         isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       aria-hidden={!isOpen}
