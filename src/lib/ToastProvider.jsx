@@ -20,7 +20,7 @@ function ToastProvider({ children }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <div
-        className="fixed top-4 right-4 z-[9999] max-w-md"
+        className="fixed top-4 right-4 z-[9999] w-[80vw] md:max-w-md"
         aria-live="polite"
         aria-atomic="true"
       >
