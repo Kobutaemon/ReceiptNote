@@ -45,14 +45,21 @@ function Dashboard({ user, onLogout }) {
     const defaultYears = buildYearRange(currentYearNumber, currentYearNumber);
 
     const loadYearOptions = async () => {
+      const currentYearString = getCurrentYear();
+
       if (!user?.id) {
         if (isMounted) {
           setYearOptions(defaultYears);
-          setSelectedYear((prev) =>
-            defaultYears.includes(prev) && prev
+          setSelectedYear((prev) => {
+            // 現在の年を優先的に選択
+            if (defaultYears.includes(currentYearString)) {
+              return currentYearString;
+            }
+            // 現在の年が選択肢にない場合は、既に選択されている年を維持
+            return defaultYears.includes(prev) && prev
               ? prev
-              : defaultYears[0] ?? getCurrentYear()
-          );
+              : defaultYears[0] ?? currentYearString;
+          });
         }
         return;
       }
@@ -90,29 +97,38 @@ function Dashboard({ user, onLogout }) {
           extractYear(earliestRow?.expense_date) ?? currentYearNumber;
         const latestYear =
           extractYear(latestRow?.expense_date) ?? currentYearNumber;
-        const options = buildYearRange(
-          earliestYear,
-          latestYear ?? currentYearNumber
-        );
+        // 現在の年が常に選択肢に含まれるように、最晚年と現在の年の大きい方を使用
+        const endYear = Math.max(latestYear, currentYearNumber);
+        const options = buildYearRange(earliestYear, endYear);
 
         if (isMounted) {
           setYearOptions(options.length > 0 ? options : defaultYears);
           setSelectedYear((prev) => {
             const source = options.length > 0 ? options : defaultYears;
+            // 現在の年を優先的に選択
+            if (source.includes(currentYearString)) {
+              return currentYearString;
+            }
+            // 現在の年が選択肢にない場合は、既に選択されている年を維持
             return source.includes(prev) && prev
               ? prev
-              : source[0] ?? getCurrentYear();
+              : source[0] ?? currentYearString;
           });
         }
       } catch (loadError) {
         console.error("年選択肢の取得に失敗しました", loadError);
         if (isMounted) {
           setYearOptions(defaultYears);
-          setSelectedYear((prev) =>
-            defaultYears.includes(prev) && prev
+          setSelectedYear((prev) => {
+            // 現在の年を優先的に選択
+            if (defaultYears.includes(currentYearString)) {
+              return currentYearString;
+            }
+            // 現在の年が選択肢にない場合は、既に選択されている年を維持
+            return defaultYears.includes(prev) && prev
               ? prev
-              : defaultYears[0] ?? getCurrentYear()
-          );
+              : defaultYears[0] ?? currentYearString;
+          });
         }
       }
     };
