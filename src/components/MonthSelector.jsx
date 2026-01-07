@@ -44,6 +44,22 @@ function MonthSelector({
       ? yearOptions
       : fallbackYears;
 
+  const handleShiftMonth = (delta) => {
+    const currentYear = Number(selectedYear);
+    const currentMonth = Number(selectedMonth);
+
+    if (!Number.isFinite(currentYear) || !Number.isFinite(currentMonth)) {
+      return;
+    }
+
+    const shifted = new Date(currentYear, currentMonth - 1 + delta);
+    const nextYear = shifted.getFullYear().toString();
+    const nextMonth = String(shifted.getMonth() + 1).padStart(2, "0");
+
+    onYearChange(nextYear);
+    onMonthChange(nextMonth);
+  };
+
   return (
     <div className="flex justify-center mx-auto mt-10">
       <div className="w-[90%] md:w-[60%] lg:w-[40%]">
@@ -55,18 +71,28 @@ function MonthSelector({
             >
               年を選択
             </label>
-            <select
-              id="year-selector"
-              value={selectedYear}
-              onChange={(event) => onYearChange(event.target.value)}
-              className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none"
-            >
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {`${year}年`}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleShiftMonth(-1)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 active:translate-y-px"
+                aria-label="前の月へ"
+              >
+                &#8249;
+              </button>
+              <select
+                id="year-selector"
+                value={selectedYear}
+                onChange={(event) => onYearChange(event.target.value)}
+                className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {`${year}年`}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div>
             <label
@@ -75,18 +101,28 @@ function MonthSelector({
             >
               月を選択
             </label>
-            <select
-              id="month-selector"
-              value={selectedMonth}
-              onChange={(event) => onMonthChange(event.target.value)}
-              className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none"
-            >
-              {months.map((month) => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                id="month-selector"
+                value={selectedMonth}
+                onChange={(event) => onMonthChange(event.target.value)}
+                className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none"
+              >
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => handleShiftMonth(1)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 active:translate-y-px"
+                aria-label="次の月へ"
+              >
+                &#8250;
+              </button>
+            </div>
           </div>
         </div>
       </div>
