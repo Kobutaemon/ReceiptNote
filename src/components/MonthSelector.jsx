@@ -61,7 +61,7 @@ function MonthSelector({
   };
 
   return (
-    <div className="flex justify-center mx-auto mt-10">
+    <div className="flex justify-center mx-auto mt-10 mb-6">
       <div className="w-[90%] md:w-[60%] lg:w-[40%]">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>

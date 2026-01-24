@@ -1,4 +1,5 @@
-import Dashboard from "./pages/Dashboard.jsx";
+import { useMemo } from "react";
+import { RouterProvider } from "react-router-dom";
 import NotFound from "./pages/NotFound.jsx";
 import { supabase } from "./lib/supabaseClient.js";
 import { Auth } from "@supabase/auth-ui-react";
@@ -7,6 +8,7 @@ import { ja } from "./lib/ja.js";
 import { useAuth } from "./lib/authContext.js";
 import ToastProvider from "./lib/ToastProvider.jsx";
 import { useToast } from "./lib/toastContext.js";
+import { createRouter } from "./router.jsx";
 
 function AppContent() {
   const { session, status } = useAuth();
@@ -28,6 +30,11 @@ function AppContent() {
     }
   };
 
+  const router = useMemo(() => {
+    if (!session) return null;
+    return createRouter(session.user, handleLogout);
+  }, [session, handleLogout]);
+
   if (status === "checking") {
     return (
       <div
@@ -46,7 +53,6 @@ function AppContent() {
         <div className="w-full max-w-md p-8">
           <Auth
             supabaseClient={supabase}
-            // appearanceプロパティでテーマを適用します
             appearance={{ theme: ThemeSupa }}
             providers={[]}
             theme="dark"
@@ -57,26 +63,9 @@ function AppContent() {
         </div>
       </div>
     );
-  } else {
-    const isBrowser = typeof window !== "undefined";
-    const isRootPath = !isBrowser || window.location.pathname === "/";
-
-    if (!isRootPath) {
-      return (
-        <NotFound
-          onGoHome={() => {
-            window.location.href = "/";
-          }}
-        />
-      );
-    }
-
-    return (
-      <div className="bg-gray-100 min-h-screen">
-        <Dashboard user={session.user} onLogout={handleLogout} />
-      </div>
-    );
   }
+
+  return <RouterProvider router={router} />;
 }
 
 function App() {

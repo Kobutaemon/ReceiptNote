@@ -6,11 +6,9 @@ import {
   Users,
   Receipt,
   Calculator,
-  Edit,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
+import MonthSelector from "../MonthSelector";
 import InviteMemberModal from "./InviteMemberModal";
 import AddSplitExpenseModal from "./AddSplitExpenseModal";
 import SettlementCalculator from "./SettlementCalculator";
@@ -348,43 +346,12 @@ function GroupDetail({ group, user, onBack }) {
       ) : activeTab === "expenses" ? (
         <>
           {/* 月別セレクター */}
-          <div className="mb-4 flex items-center justify-center gap-4">
-            <button
-              type="button"
-              onClick={() => {
-                const month = parseInt(selectedMonth, 10);
-                const year = parseInt(selectedYear, 10);
-                if (month === 1) {
-                  setSelectedMonth("12");
-                  setSelectedYear((year - 1).toString());
-                } else {
-                  setSelectedMonth((month - 1).toString().padStart(2, "0"));
-                }
-              }}
-              className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <span className="min-w-[120px] text-center text-lg font-semibold text-gray-800">
-              {selectedYear}年{selectedMonth}月
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                const month = parseInt(selectedMonth, 10);
-                const year = parseInt(selectedYear, 10);
-                if (month === 12) {
-                  setSelectedMonth("01");
-                  setSelectedYear((year + 1).toString());
-                } else {
-                  setSelectedMonth((month + 1).toString().padStart(2, "0"));
-                }
-              }}
-              className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
+          <MonthSelector
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            onYearChange={setSelectedYear}
+            onMonthChange={setSelectedMonth}
+          />
 
           {/* 支出追加ボタン */}
           <button
