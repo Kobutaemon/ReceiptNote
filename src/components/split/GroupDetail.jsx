@@ -6,6 +6,8 @@ import {
   Users,
   Receipt,
   Calculator,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import InviteMemberModal from "./InviteMemberModal";
 import AddSplitExpenseModal from "./AddSplitExpenseModal";
@@ -31,6 +33,7 @@ function GroupDetail({ group, user, onBack }) {
   const [selectedSettlement, setSelectedSettlement] = useState(null);
   const [activeTab, setActiveTab] = useState("expenses"); // expenses | settlements
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null); // 編集中の支出
   const { showToast } = useToast();
 
   const userId = user?.id ?? null;
@@ -193,6 +196,38 @@ function GroupDetail({ group, user, onBack }) {
     }
   };
 
+  // 支出を削除
+  const handleDeleteExpense = async (expense) => {
+    const shouldDelete = window.confirm(
+      `「${expense.title}」を削除しますか？\nこの操作は取り消せません。`
+    );
+    if (!shouldDelete) return;
+
+    try {
+      // 参加者を先に削除（外部キー制約のため）
+      const { error: participantsError } = await supabase
+        .from("expense_participants")
+        .delete()
+        .eq("expense_id", expense.id);
+
+      if (participantsError) throw participantsError;
+
+      // 支出を削除
+      const { error: expenseError } = await supabase
+        .from("split_expenses")
+        .delete()
+        .eq("id", expense.id);
+
+      if (expenseError) throw expenseError;
+
+      showToast("支出を削除しました", "success");
+      await loadData();
+    } catch (error) {
+      console.error("支出の削除に失敗しました", error);
+      showToast("支出の削除に失敗しました", "error");
+    }
+  };
+
   // グループ脱退
   const handleLeaveGroup = async () => {
     const shouldLeave = window.confirm(
@@ -328,8 +363,8 @@ function GroupDetail({ group, user, onBack }) {
                   key={expense.id}
                   className="rounded-lg bg-white p-4 shadow-sm"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
                       <h3 className="font-medium text-gray-800">
                         {expense.title}
                       </h3>
@@ -351,6 +386,19 @@ function GroupDetail({ group, user, onBack }) {
                       </p>
                     </div>
                   </div>
+                  {/* 編集・削除ボタン（支払者のみ表示） */}
+                  {expense.paid_by === userId && (
+                    <div className="mt-3 flex justify-end gap-2 border-t border-gray-100 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteExpense(expense)}
+                        className="flex items-center gap-1 rounded px-3 py-1.5 text-xs text-red-600 transition-colors hover:bg-red-50"
+                      >
+                        <Trash2 size={14} />
+                        <span>削除</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
