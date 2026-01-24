@@ -1,0 +1,24 @@
+[36mvite v6.4.1 [32mbuilding for production...[36m[39m
+transforming...
+[32m笨・[39m 1713 modules transformed.
+笨・[39m Build failed in 2.05s
+error during build:
+src/components/split/AddSplitExpenseModal.jsx (2:22): "Yen" is not exported by "node_modules/.pnpm/lucide-react@0.516.0_react@19.2.3/node_modules/lucide-react/dist/esm/lucide-react.js", imported by "src/components/split/AddSplitExpenseModal.jsx".
+file: C:/Users/isoto/Documents/web/fullstack/ReceiptNote/src/components/split/AddSplitExpenseModal.jsx:2:22
+
+1: import { useState, useEffect, useRef } from "react";
+2: import { X, Calendar, Yen } from "lucide-react";
+                         ^
+3: 
+4: function AddSplitExpenseModal({
+
+    at getRollupError (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at error (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/parseAst.js:397:42)
+    at Module.error (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:17022:16)
+    at Module.traceVariable (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:17478:29)
+    at ModuleScope.findVariable (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:15141:39)
+    at FunctionScope.findVariable (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:5688:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:5688:38)
+    at Identifier.bind (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:5462:40)
+    at CallExpression.bind (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:2825:28)
+    at CallExpression.bind (file:///C:/Users/isoto/Documents/web/fullstack/ReceiptNote/node_modules/.pnpm/rollup@4.54.0/node_modules/rollup/dist/es/shared/node-entry.js:12172:15)

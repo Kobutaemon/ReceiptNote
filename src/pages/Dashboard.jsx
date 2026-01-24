@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { Wallet, Users } from "lucide-react";
 import CardList from "../components/CardList";
 import MonthSelector from "../components/MonthSelector";
 import AvailableFunds from "../components/AvailableFunds";
+import SplitDashboard from "../components/split/SplitDashboard";
 import { getCurrentMonth, getCurrentYear } from "../utils/dateUtils";
 import { supabase } from "../lib/supabaseClient";
 
@@ -33,6 +35,7 @@ function Dashboard({ user, onLogout }) {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [expensesVersion, setExpensesVersion] = useState(0);
   const [yearOptions, setYearOptions] = useState([]);
+  const [activeTab, setActiveTab] = useState("expenses"); // expenses | split
 
   const handleExpensesMutated = useCallback(() => {
     setExpensesVersion((prev) => prev + 1);
@@ -145,28 +148,66 @@ function Dashboard({ user, onLogout }) {
       <header>
         <h1 className="text-3xl text-center pt-4 font-bold">ReceiptNote</h1>
       </header>
+
+      {/* タブナビゲーション */}
+      <div className="flex justify-center mt-6">
+        <div className="inline-flex rounded-lg bg-gray-200 p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("expenses")}
+            className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "expenses"
+                ? "bg-white text-gray-800 shadow-sm"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
+          >
+            <Wallet size={18} />
+            <span>支出管理</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("split")}
+            className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "split"
+                ? "bg-white text-gray-800 shadow-sm"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
+          >
+            <Users size={18} />
+            <span>割り勘</span>
+          </button>
+        </div>
+      </div>
+
       <main>
-        <MonthSelector
-          selectedYear={selectedYear}
-          selectedMonth={selectedMonth}
-          onYearChange={setSelectedYear}
-          onMonthChange={setSelectedMonth}
-          yearOptions={yearOptions}
-        />
-        <CardList
-          selectedYear={selectedYear}
-          selectedMonth={selectedMonth}
-          user={user}
-          onExpensesMutated={handleExpensesMutated}
-        />
-        <hr className="mx-6 mt-8 border-t border-gray-400" aria-hidden="true" />
-        <AvailableFunds
-          selectedYear={selectedYear}
-          selectedMonth={selectedMonth}
-          userId={user?.id ?? null}
-          expensesVersion={expensesVersion}
-        />
+        {activeTab === "expenses" ? (
+          <>
+            <MonthSelector
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
+              onYearChange={setSelectedYear}
+              onMonthChange={setSelectedMonth}
+              yearOptions={yearOptions}
+            />
+            <CardList
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
+              user={user}
+              onExpensesMutated={handleExpensesMutated}
+            />
+            <hr className="mx-6 mt-8 border-t border-gray-400" aria-hidden="true" />
+            <AvailableFunds
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
+              userId={user?.id ?? null}
+              expensesVersion={expensesVersion}
+            />
+          </>
+        ) : (
+          <SplitDashboard user={user} />
+        )}
       </main>
+
       {onLogout && (
         <div className="mt-8 flex justify-center">
           <button
@@ -188,3 +229,4 @@ function Dashboard({ user, onLogout }) {
 }
 
 export default Dashboard;
+
