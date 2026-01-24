@@ -34,6 +34,7 @@ function GroupDetail({ group, user, onBack }) {
   const [activeTab, setActiveTab] = useState("expenses"); // expenses | settlements
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null); // 編集中の支出
+  const [expandedExpenseId, setExpandedExpenseId] = useState(null); // 展開中の支出
   const { showToast } = useToast();
 
   const userId = user?.id ?? null;
@@ -358,49 +359,85 @@ function GroupDetail({ group, user, onBack }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {expenses.map((expense) => (
-                <div
-                  key={expense.id}
-                  className="rounded-lg bg-white p-4 shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-800">
-                        {expense.title}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {getMemberDisplay(expense.paid_by)} が支払い
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(expense.expense_date).toLocaleDateString(
-                          "ja-JP"
-                        )}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-gray-800">
-                        {formatCurrency(expense.amount)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {expense.expense_participants?.length || 0}人で割り勘
-                      </p>
-                    </div>
+              {expenses.map((expense) => {
+                const isExpanded = expandedExpenseId === expense.id;
+                return (
+                  <div
+                    key={expense.id}
+                    className="rounded-lg bg-white shadow-sm overflow-hidden"
+                  >
+                    {/* クリック可能なヘッダー */}
+                    <button
+                      type="button"
+                      onClick={() => setExpandedExpenseId(isExpanded ? null : expense.id)}
+                      className="w-full p-4 text-left transition-colors hover:bg-gray-50"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-800">
+                            {expense.title}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {getMemberDisplay(expense.paid_by)} が支払い
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(expense.expense_date).toLocaleDateString(
+                              "ja-JP"
+                            )}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-semibold text-gray-800">
+                            {formatCurrency(expense.amount)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {expense.expense_participants?.length || 0}人で割り勘
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* 展開時の詳細 */}
+                    {isExpanded && (
+                      <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
+                        <p className="mb-2 text-xs font-medium text-gray-500">各自の負担額</p>
+                        <div className="space-y-1">
+                          {expense.expense_participants?.map((participant) => (
+                            <div
+                              key={participant.id}
+                              className="flex items-center justify-between text-sm"
+                            >
+                              <span className="text-gray-700">
+                                {getMemberDisplay(participant.user_id)}
+                              </span>
+                              <span className="font-medium text-gray-800">
+                                {formatCurrency(participant.share_amount)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 削除ボタン（支払者のみ表示） */}
+                    {expense.paid_by === userId && (
+                      <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteExpense(expense);
+                          }}
+                          className="flex items-center gap-1 rounded px-3 py-1.5 text-xs text-red-600 transition-colors hover:bg-red-50"
+                        >
+                          <Trash2 size={14} />
+                          <span>削除</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  {/* 編集・削除ボタン（支払者のみ表示） */}
-                  {expense.paid_by === userId && (
-                    <div className="mt-3 flex justify-end gap-2 border-t border-gray-100 pt-3">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteExpense(expense)}
-                        className="flex items-center gap-1 rounded px-3 py-1.5 text-xs text-red-600 transition-colors hover:bg-red-50"
-                      >
-                        <Trash2 size={14} />
-                        <span>削除</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </>
