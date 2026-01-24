@@ -111,13 +111,14 @@ function SplitDashboard({ user }) {
 
       if (groupError) throw groupError;
 
-      // 作成者をオーナーとして追加
+      // 作成者をオーナーとして追加（emailも保存）
       const { error: memberError } = await supabase
         .from("group_members")
         .insert({
           group_id: newGroup.id,
           user_id: userId,
           role: "owner",
+          email: userEmail,
         });
 
       if (memberError) throw memberError;
@@ -144,13 +145,14 @@ function SplitDashboard({ user }) {
 
       if (updateError) throw updateError;
 
-      // グループメンバーに追加
+      // グループメンバーに追加（emailも保存）
       const { error: memberError } = await supabase
         .from("group_members")
         .insert({
           group_id: invitation.group_id,
           user_id: userId,
           role: "member",
+          email: userEmail,
         });
 
       if (memberError) throw memberError;

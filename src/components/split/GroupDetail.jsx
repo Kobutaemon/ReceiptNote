@@ -42,39 +42,20 @@ function GroupDetail({ group, user, onBack }) {
 
     setIsLoading(true);
     try {
-      // メンバー一覧
+      // メンバー一覧（emailカラムを直接取得）
       const { data: membersData, error: membersError } = await supabase
         .from("group_members")
-        .select("user_id, role, joined_at")
+        .select("user_id, role, joined_at, email")
         .eq("group_id", group.id);
 
       if (membersError) throw membersError;
 
-      // 招待履歴から全員のメールアドレスを一括取得
-      const { data: invitationsData } = await supabase
-        .from("group_invitations")
-        .select("invited_email")
-        .eq("group_id", group.id)
-        .eq("status", "accepted");
-
-      // 招待メールのセットを作成（自分以外のメール候補）
-      const acceptedEmails = (invitationsData || []).map((inv) => inv.invited_email);
-
-      // メンバーにメールを紐付け
-      // - 自分のメールは直接取得
-      // - 他のメンバーは招待履歴から推測（メンバー順序と招待順序が一致する場合）
-      let emailIndex = 0;
+      // 自分のメールが保存されていない場合は補完
       const membersWithEmail = (membersData || []).map((member) => {
-        if (member.user_id === userId) {
+        if (member.user_id === userId && !member.email) {
           return { ...member, email: userEmail };
         }
-        // 招待履歴からメールを取得（完全マッチではないが、参考表示）
-        if (emailIndex < acceptedEmails.length) {
-          const email = acceptedEmails[emailIndex];
-          emailIndex++;
-          return { ...member, email };
-        }
-        return { ...member, email: null };
+        return member;
       });
 
       setMembers(membersWithEmail);
