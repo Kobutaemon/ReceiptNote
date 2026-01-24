@@ -11,6 +11,7 @@ import InviteMemberModal from "./InviteMemberModal";
 import AddSplitExpenseModal from "./AddSplitExpenseModal";
 import SettlementCalculator from "./SettlementCalculator";
 import SettleUpModal from "./SettleUpModal";
+import MemberListModal from "./MemberListModal";
 import { supabase } from "../../lib/supabaseClient";
 import { useToast } from "../../lib/toastContext";
 import {
@@ -29,6 +30,7 @@ function GroupDetail({ group, user, onBack }) {
   const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
   const [selectedSettlement, setSelectedSettlement] = useState(null);
   const [activeTab, setActiveTab] = useState("expenses"); // expenses | settlements
+  const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const { showToast } = useToast();
 
   const userId = user?.id ?? null;
@@ -48,28 +50,32 @@ function GroupDetail({ group, user, onBack }) {
 
       if (membersError) throw membersError;
 
-      // ユーザーのメールアドレスを取得するため、auth.usersにはアクセスできないので
-      // 招待テーブルから取得するか、member自体にemailを保存する方法を検討
-      // 暫定的にuser_idのみ表示
-      const membersWithEmail = await Promise.all(
-        (membersData || []).map(async (member) => {
-          // 招待テーブルからメールを取得する代替手段
-          // または、グループ内で自分のメールは分かる
-          if (member.user_id === userId) {
-            return { ...member, email: userEmail };
-          }
-          // 他のユーザーのメールは招待履歴から取得
-          const { data: inviteData } = await supabase
-            .from("group_invitations")
-            .select("invited_email")
-            .eq("group_id", group.id)
-            .eq("status", "accepted")
-            .limit(100);
+      // 招待履歴から全員のメールアドレスを一括取得
+      const { data: invitationsData } = await supabase
+        .from("group_invitations")
+        .select("invited_email")
+        .eq("group_id", group.id)
+        .eq("status", "accepted");
 
-          // group_membersとマッチングは困難なので、暫定でIDを表示
-          return { ...member, email: null };
-        })
-      );
+      // 招待メールのセットを作成（自分以外のメール候補）
+      const acceptedEmails = (invitationsData || []).map((inv) => inv.invited_email);
+
+      // メンバーにメールを紐付け
+      // - 自分のメールは直接取得
+      // - 他のメンバーは招待履歴から推測（メンバー順序と招待順序が一致する場合）
+      let emailIndex = 0;
+      const membersWithEmail = (membersData || []).map((member) => {
+        if (member.user_id === userId) {
+          return { ...member, email: userEmail };
+        }
+        // 招待履歴からメールを取得（完全マッチではないが、参考表示）
+        if (emailIndex < acceptedEmails.length) {
+          const email = acceptedEmails[emailIndex];
+          emailIndex++;
+          return { ...member, email };
+        }
+        return { ...member, email: null };
+      });
 
       setMembers(membersWithEmail);
 
@@ -120,31 +126,20 @@ function GroupDetail({ group, user, onBack }) {
   // 招待送信
   const handleInvite = async (email) => {
     try {
-      // 既に招待済みか確認
-      const { data: existingInvite } = await supabase
-        .from("group_invitations")
-        .select("id, status")
-        .eq("group_id", group.id)
-        .eq("invited_email", email)
-        .single();
-
-      if (existingInvite) {
-        if (existingInvite.status === "pending") {
-          return { error: "このメールアドレスには既に招待を送信しています" };
-        }
-        if (existingInvite.status === "accepted") {
-          return { error: "このユーザーは既にグループに参加しています" };
-        }
-      }
-
-      // 招待を作成
+      // 招待を作成（重複チェックはDBのUNIQUE制約に任せる）
       const { error } = await supabase.from("group_invitations").insert({
         group_id: group.id,
         invited_email: email,
         invited_by: userId,
       });
 
-      if (error) throw error;
+      if (error) {
+        // 重複キー制約エラー
+        if (error.code === "23505") {
+          return { error: "このメールアドレスには既に招待を送信しています" };
+        }
+        throw error;
+      }
 
       showToast("招待を送信しました", "success");
       setIsInviteModalOpen(false);
@@ -217,6 +212,34 @@ function GroupDetail({ group, user, onBack }) {
     }
   };
 
+  // グループ脱退
+  const handleLeaveGroup = async () => {
+    const shouldLeave = window.confirm(
+      "本当にこのグループを脱退しますか？\n未精算の残高がある場合は、先に精算してください。"
+    );
+    if (!shouldLeave) return;
+
+    try {
+      const { error } = await supabase
+        .from("group_members")
+        .delete()
+        .eq("group_id", group.id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      showToast("グループを脱退しました", "success");
+      onBack();
+    } catch (error) {
+      console.error("グループの脱退に失敗しました", error);
+      showToast("グループの脱退に失敗しました", "error");
+    }
+  };
+
+  // 現在のユーザーがオーナーかどうか
+  const currentMember = members.find((m) => m.user_id === userId);
+  const isOwner = currentMember?.role === "owner";
+
   // 残高計算
   const balances = calculateBalances(expenses, settlements);
   const optimalSettlements = calculateOptimalSettlements(balances);
@@ -259,11 +282,15 @@ function GroupDetail({ group, user, onBack }) {
           </button>
         </div>
 
-        {/* メンバー数 */}
-        <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+        {/* メンバー数（クリックでモーダル表示） */}
+        <button
+          type="button"
+          onClick={() => setIsMemberListOpen(true)}
+          className="mt-2 flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+        >
           <Users size={16} />
-          <span>{members.length}人のメンバー</span>
-        </div>
+          <span className="underline underline-offset-2">{members.length}人のメンバー</span>
+        </button>
       </div>
 
       {/* タブ */}
@@ -387,6 +414,16 @@ function GroupDetail({ group, user, onBack }) {
         settlement={selectedSettlement}
         getMemberDisplay={getMemberDisplay}
         onConfirm={handleSettle}
+      />
+
+      <MemberListModal
+        isOpen={isMemberListOpen}
+        onClose={() => setIsMemberListOpen(false)}
+        members={members}
+        currentUserId={userId}
+        getMemberDisplay={getMemberDisplay}
+        onLeaveGroup={handleLeaveGroup}
+        isOwner={isOwner}
       />
     </div>
   );

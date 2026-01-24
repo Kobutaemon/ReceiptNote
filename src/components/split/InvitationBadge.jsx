@@ -20,7 +20,7 @@ function InvitationBadge({ invitations, onAccept, onDecline }) {
           >
             <div>
               <p className="font-medium text-gray-800">
-                {invitation.split_groups?.name || "グループ"}
+                {invitation.groupName || invitation.split_groups?.name || "グループへの招待"}
               </p>
               <p className="text-xs text-gray-500">
                 {new Date(invitation.created_at).toLocaleDateString("ja-JP")}

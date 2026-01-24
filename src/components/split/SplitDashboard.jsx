@@ -56,29 +56,33 @@ function SplitDashboard({ user }) {
     }
   };
 
-  // 招待を取得
+  // 招待を取得（split_groupsへのJOINは権限がないため行わない）
   const loadInvitations = async () => {
     if (!userEmail) return;
 
     try {
-      const { data, error } = await supabase
+      // まず招待を取得
+      const { data: invitationsData, error: invitationsError } = await supabase
         .from("group_invitations")
-        .select(`
-          id,
-          group_id,
-          status,
-          created_at,
-          split_groups (
-            id,
-            name
-          )
-        `)
+        .select("id, group_id, status, created_at, invited_by")
         .eq("invited_email", userEmail)
         .eq("status", "pending");
 
-      if (error) throw error;
+      if (invitationsError) throw invitationsError;
 
-      setPendingInvitations(data || []);
+      if (!invitationsData || invitationsData.length === 0) {
+        setPendingInvitations([]);
+        return;
+      }
+
+      // 招待者のメールからグループ名を推測（暫定対応）
+      // 本来はグループ名を招待テーブルに保存するのがベスト
+      const invitationsWithNames = invitationsData.map((inv) => ({
+        ...inv,
+        groupName: "グループへの招待", // 暫定でジェネリックな名前を表示
+      }));
+
+      setPendingInvitations(invitationsWithNames);
     } catch (error) {
       console.error("招待の取得に失敗しました", error);
     }
