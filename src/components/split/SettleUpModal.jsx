@@ -8,15 +8,25 @@ function SettleUpModal({
   getMemberDisplay,
   onConfirm,
 }) {
-  if (!isOpen || !settlement) return null;
-
   const handleConfirm = () => {
-    onConfirm(settlement);
+    if (settlement) {
+      onConfirm(settlement);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-gray-500/80 transition-opacity duration-300 ${
+        isOpen && settlement ? "opacity-100" : "opacity-0 pointer-events-none"
+      }`}
+      onClick={onClose}
+    >
+      <div
+        className={`w-full max-w-sm rounded-lg bg-white p-6 shadow-xl transition-transform duration-300 ease-out ${
+          isOpen && settlement ? "scale-100" : "scale-95"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-800">精算を確認</h2>
           <button

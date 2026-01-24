@@ -10,11 +10,19 @@ function MemberListModal({
   onDeleteGroup,
   isOwner,
 }) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-gray-500/80 p-4 transition-opacity duration-300 ${
+        isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+      }`}
+      onClick={onClose}
+    >
+      <div
+        className={`max-h-[80vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow-xl transition-transform duration-300 ease-out ${
+          isOpen ? "scale-100" : "scale-95"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-800">
             メンバー一覧 ({members.length}人)
