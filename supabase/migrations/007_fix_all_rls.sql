@@ -42,6 +42,29 @@ DROP POLICY IF EXISTS "Users can view their settlements" ON settlements;
 DROP POLICY IF EXISTS "Involved users can create settlements" ON settlements;
 DROP POLICY IF EXISTS "Users can create settlements they are involved in" ON settlements;
 
+-- 新しいポリシー名も削除（再実行対応）
+DROP POLICY IF EXISTS "gm_select" ON group_members;
+DROP POLICY IF EXISTS "gm_insert" ON group_members;
+DROP POLICY IF EXISTS "gm_delete" ON group_members;
+DROP POLICY IF EXISTS "sg_select" ON split_groups;
+DROP POLICY IF EXISTS "sg_insert" ON split_groups;
+DROP POLICY IF EXISTS "sg_update" ON split_groups;
+DROP POLICY IF EXISTS "sg_delete" ON split_groups;
+DROP POLICY IF EXISTS "gi_select" ON group_invitations;
+DROP POLICY IF EXISTS "gi_insert" ON group_invitations;
+DROP POLICY IF EXISTS "gi_update" ON group_invitations;
+DROP POLICY IF EXISTS "gi_delete" ON group_invitations;
+DROP POLICY IF EXISTS "se_select" ON split_expenses;
+DROP POLICY IF EXISTS "se_insert" ON split_expenses;
+DROP POLICY IF EXISTS "se_update" ON split_expenses;
+DROP POLICY IF EXISTS "se_delete" ON split_expenses;
+DROP POLICY IF EXISTS "ep_select" ON expense_participants;
+DROP POLICY IF EXISTS "ep_insert" ON expense_participants;
+DROP POLICY IF EXISTS "ep_update" ON expense_participants;
+DROP POLICY IF EXISTS "ep_delete" ON expense_participants;
+DROP POLICY IF EXISTS "st_select" ON settlements;
+DROP POLICY IF EXISTS "st_insert" ON settlements;
+
 -- =====================================================
 -- シンプルな新ポリシー（相互参照を避ける）
 -- =====================================================
