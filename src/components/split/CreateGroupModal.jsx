@@ -50,7 +50,7 @@ function CreateGroupModal({ isOpen, onClose, onSubmit }) {
       onClick={handleClose}
     >
       <div
-        className={`w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl transition-transform duration-300 ease-out ${
+        className={`w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl transition-transform duration-300 ease-out ${
           isOpen ? "scale-100" : "scale-95"
         }`}
         onClick={(e) => e.stopPropagation()}

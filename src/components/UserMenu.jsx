@@ -147,48 +147,50 @@ function UserMenu({ user, onLogout }) {
       </div>
 
       {/* ユーザー名編集モーダル */}
-      {isEditModalOpen && (
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-gray-500/80 transition-opacity duration-300 ${
+          isEditModalOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => !isSaving && setIsEditModalOpen(false)}
+      >
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500/80"
-          onClick={() => setIsEditModalOpen(false)}
+          className={`w-full max-w-sm rounded-lg bg-white p-6 shadow-xl transition-transform duration-300 ease-out ${
+            isEditModalOpen ? "scale-100" : "scale-95"
+          }`}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-4 text-lg font-bold text-gray-800">
-              ユーザー名を編集
-            </h3>
-            <input
-              type="text"
-              value={newDisplayName}
-              onChange={(e) => setNewDisplayName(e.target.value)}
-              placeholder="表示名を入力"
-              className="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              maxLength={50}
-              autoFocus
-            />
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="rounded-lg px-4 py-2 text-gray-600 transition-colors hover:bg-gray-100"
-                disabled={isSaving}
-              >
-                キャンセル
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveDisplayName}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-                disabled={isSaving}
-              >
-                {isSaving ? "保存中..." : "保存"}
-              </button>
-            </div>
+          <h3 className="mb-4 text-lg font-bold text-gray-800">
+            ユーザー名を編集
+          </h3>
+          <input
+            type="text"
+            value={newDisplayName}
+            onChange={(e) => setNewDisplayName(e.target.value)}
+            placeholder="表示名を入力"
+            className="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            maxLength={50}
+            autoFocus
+          />
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              className="rounded-lg px-4 py-2 text-gray-600 transition-colors hover:bg-gray-100"
+              disabled={isSaving}
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveDisplayName}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+              disabled={isSaving}
+            >
+              {isSaving ? "保存中..." : "保存"}
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </>
   );
 }
