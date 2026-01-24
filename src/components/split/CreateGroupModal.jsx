@@ -96,7 +96,7 @@ function CreateGroupModal({ isOpen, onClose, onSubmit }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="例: 沖縄旅行"
+              placeholder="例: 箱根旅行"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               required
             />
