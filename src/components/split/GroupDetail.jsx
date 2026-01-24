@@ -57,15 +57,33 @@ function GroupDetail({ group, user, onBack }) {
 
       if (membersError) throw membersError;
 
-      // 自分のメールが保存されていない場合は補完
-      const membersWithEmail = (membersData || []).map((member) => {
-        if (member.user_id === userId && !member.email) {
-          return { ...member, email: userEmail };
+      // profilesからdisplay_nameを取得
+      const userIds = (membersData || []).map((m) => m.user_id);
+      let profilesMap = {};
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", userIds);
+
+        if (profilesData) {
+          profilesData.forEach((profile) => {
+            profilesMap[profile.id] = profile.display_name;
+          });
         }
-        return member;
+      }
+
+      // メンバーにプロフィール情報を付加
+      const membersWithProfile = (membersData || []).map((member) => {
+        const displayName = profilesMap[member.user_id] || null;
+        return {
+          ...member,
+          email: member.email || (member.user_id === userId ? userEmail : null),
+          display_name: displayName,
+        };
       });
 
-      setMembers(membersWithEmail);
+      setMembers(membersWithProfile);
 
       // 支出一覧
       const { data: expensesData, error: expensesError } = await supabase
@@ -114,7 +132,15 @@ function GroupDetail({ group, user, onBack }) {
   // 招待送信
   const handleInvite = async (email) => {
     try {
-      // 招待を作成（重複チェックはDBのUNIQUE制約に任せる）
+      // 拒否された既存の招待を削除（再招待を可能にする）
+      await supabase
+        .from("group_invitations")
+        .delete()
+        .eq("group_id", group.id)
+        .eq("invited_email", email)
+        .eq("status", "declined");
+
+      // 招待を作成
       const { error } = await supabase.from("group_invitations").insert({
         group_id: group.id,
         invited_email: email,
@@ -122,7 +148,7 @@ function GroupDetail({ group, user, onBack }) {
       });
 
       if (error) {
-        // 重複キー制約エラー
+        // 重複キー制約エラー（pending状態の招待が既に存在）
         if (error.code === "23505") {
           return { error: "このメールアドレスには既に招待を送信しています" };
         }
@@ -256,6 +282,68 @@ function GroupDetail({ group, user, onBack }) {
     }
   };
 
+  // グループ削除（オーナーのみ）
+  const handleDeleteGroup = async () => {
+    const shouldDelete = window.confirm(
+      `「${group.name}」を削除しますか？\n\nこの操作は取り消せません。\nすべての支出・精算記録も削除されます。`
+    );
+    if (!shouldDelete) return;
+
+    try {
+      // 1. 支出の参加者を削除
+      const { data: expenseIds } = await supabase
+        .from("split_expenses")
+        .select("id")
+        .eq("group_id", group.id);
+
+      if (expenseIds && expenseIds.length > 0) {
+        const ids = expenseIds.map((e) => e.id);
+        await supabase
+          .from("expense_participants")
+          .delete()
+          .in("expense_id", ids);
+      }
+
+      // 2. 支出を削除
+      await supabase
+        .from("split_expenses")
+        .delete()
+        .eq("group_id", group.id);
+
+      // 3. 精算記録を削除
+      await supabase
+        .from("settlements")
+        .delete()
+        .eq("group_id", group.id);
+
+      // 4. 招待を削除
+      await supabase
+        .from("group_invitations")
+        .delete()
+        .eq("group_id", group.id);
+
+      // 5. メンバーを削除
+      await supabase
+        .from("group_members")
+        .delete()
+        .eq("group_id", group.id);
+
+      // 6. グループを削除
+      const { error } = await supabase
+        .from("split_groups")
+        .delete()
+        .eq("id", group.id);
+
+      if (error) throw error;
+
+      showToast("グループを削除しました", "success");
+      onBack();
+    } catch (error) {
+      console.error("グループの削除に失敗しました", error);
+      showToast("グループの削除に失敗しました", "error");
+    }
+  };
+
   // 現在のユーザーがオーナーかどうか
   const currentMember = members.find((m) => m.user_id === userId);
   const isOwner = currentMember?.role === "owner";
@@ -264,9 +352,11 @@ function GroupDetail({ group, user, onBack }) {
   const balances = calculateBalances(expenses, settlements);
   const optimalSettlements = calculateOptimalSettlements(balances);
 
-  // メンバーのメール/ID表示用ヘルパー
+  // メンバーの表示名ヘルパー（ユーザー名 > メール > ID）
   const getMemberDisplay = (memberId) => {
     const member = members.find((m) => m.user_id === memberId);
+    // ユーザー名が設定されていれば優先表示
+    if (member?.display_name) return member.display_name;
     if (member?.email) return member.email;
     if (memberId === userId) return userEmail || "自分";
     return memberId.slice(0, 8) + "...";
@@ -517,6 +607,7 @@ function GroupDetail({ group, user, onBack }) {
         currentUserId={userId}
         getMemberDisplay={getMemberDisplay}
         onLeaveGroup={handleLeaveGroup}
+        onDeleteGroup={handleDeleteGroup}
         isOwner={isOwner}
       />
     </div>

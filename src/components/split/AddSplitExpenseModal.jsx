@@ -128,8 +128,9 @@ function AddSplitExpenseModal({
   }, 0);
   const customDifference = numAmount - customTotal;
 
-  // メンバー表示用ヘルパー
+  // メンバー表示用ヘルパー（ユーザー名 > メール > ID）
   const getMemberDisplay = (member) => {
+    if (member.display_name) return member.display_name;
     return member.email || member.user_id.slice(0, 8) + "...";
   };
 

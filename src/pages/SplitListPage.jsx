@@ -33,6 +33,8 @@ function SplitListPage({ user }) {
             id,
             name,
             description,
+            icon_name,
+            icon_color,
             created_at
           )
         `)
@@ -91,7 +93,7 @@ function SplitListPage({ user }) {
   }, [userId, userEmail]);
 
   // グループ作成
-  const handleCreateGroup = async (name, description) => {
+  const handleCreateGroup = async (name, description, iconName, iconColor) => {
     if (!userId) return;
 
     try {
@@ -100,6 +102,8 @@ function SplitListPage({ user }) {
         .insert({
           name,
           description,
+          icon_name: iconName || "Users",
+          icon_color: iconColor || "blue",
           created_by: userId,
         })
         .select()

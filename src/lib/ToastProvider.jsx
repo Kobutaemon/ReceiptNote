@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { ToastContext } from "./toastContext";
 import Toast from "../components/Toast";
 
@@ -16,8 +16,11 @@ function ToastProvider({ children }) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+  // コンテキスト値をメモ化して不要な再レンダリングを防止
+  const contextValue = useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       <div
         className="fixed top-4 right-4 z-[9999] w-[80vw] md:max-w-md"
@@ -39,4 +42,3 @@ function ToastProvider({ children }) {
 }
 
 export default ToastProvider;
-

@@ -1,4 +1,4 @@
-import { X, Crown, User, LogOut } from "lucide-react";
+import { X, Crown, User, LogOut, Trash2 } from "lucide-react";
 
 function MemberListModal({
   isOpen,
@@ -7,6 +7,7 @@ function MemberListModal({
   currentUserId,
   getMemberDisplay,
   onLeaveGroup,
+  onDeleteGroup,
   isOwner,
 }) {
   if (!isOpen) return null;
@@ -70,7 +71,7 @@ function MemberListModal({
           })}
         </div>
 
-        {/* グループ脱退ボタン */}
+        {/* グループ脱退ボタン（メンバーのみ） */}
         {!isOwner && (
           <div className="mt-6 border-t border-gray-200 pt-4">
             <button
@@ -84,12 +85,21 @@ function MemberListModal({
           </div>
         )}
 
+        {/* グループ削除ボタン（オーナーのみ） */}
         {isOwner && (
-          <p className="mt-4 text-center text-xs text-gray-500">
-            オーナーはグループを脱退できません。
-            <br />
-            グループを削除するか、別のメンバーにオーナー権限を移譲してください。
-          </p>
+          <div className="mt-6 border-t border-gray-200 pt-4">
+            <button
+              type="button"
+              onClick={onDeleteGroup}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-white transition-colors hover:bg-red-700"
+            >
+              <Trash2 size={18} />
+              <span>グループを削除する</span>
+            </button>
+            <p className="mt-2 text-center text-xs text-gray-500">
+              グループを削除すると、すべての支出・精算記録も削除されます。
+            </p>
+          </div>
         )}
       </div>
     </div>
