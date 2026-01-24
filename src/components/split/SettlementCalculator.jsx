@@ -17,7 +17,7 @@ function SettlementCalculator({
       {/* 自分の残高 */}
       <div className="mb-6 rounded-lg bg-white p-6 shadow-sm">
         <h3 className="mb-2 text-sm font-medium text-gray-500">あなたの残高</h3>
-        <p className={`text-3xl font-bold ${balanceInfo.className}`}>
+        <p className={`text-3xl font-bold ${balanceInfo.className} mb-4`}>
           {balanceInfo.text}
         </p>
         <p className="text-sm text-gray-500">{balanceInfo.description}</p>
@@ -41,30 +41,33 @@ function SettlementCalculator({
               return (
                 <div
                   key={`${settlement.from}-${settlement.to}-${index}`}
-                  className={`flex items-center justify-between rounded-lg p-4 ${
+                  className={`flex flex-col md:flex-row items-center justify-between gap-4 rounded-lg p-4 ${
                     isMySettlement ? "bg-blue-50" : "bg-white"
                   } shadow-sm`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-800">
+                  <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 w-full md:w-auto">
+                    <div className="text-center md:text-left">
+                      <span className="text-sm font-medium text-gray-800">
                         {getMemberDisplay(settlement.from)}
-                      </p>
+                      </span>
                       {settlement.from === currentUserId && (
-                        <span className="text-xs text-blue-600">(自分)</span>
+                        <span className="ml-1 text-xs text-blue-600 whitespace-nowrap">(自分)</span>
                       )}
                     </div>
-                    <ArrowRight className="text-gray-400" size={20} />
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-800">
+                    
+                    <ArrowRight className="text-gray-400 rotate-90 md:rotate-0 my-1 md:my-0" size={20} />
+                    
+                    <div className="text-center md:text-left">
+                      <span className="text-sm font-medium text-gray-800">
                         {getMemberDisplay(settlement.to)}
-                      </p>
+                      </span>
                       {settlement.to === currentUserId && (
-                        <span className="text-xs text-blue-600">(自分)</span>
+                        <span className="ml-1 text-xs text-blue-600 whitespace-nowrap">(自分)</span>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  
+                  <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                     <p className="text-lg font-semibold text-gray-800">
                       {formatCurrency(settlement.amount)}
                     </p>
@@ -72,7 +75,7 @@ function SettlementCalculator({
                       <button
                         type="button"
                         onClick={() => onSettle(settlement)}
-                        className="rounded-lg bg-green-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-green-700"
+                        className="w-full md:w-auto rounded-lg bg-green-600 px-4 py-2 text-sm text-white transition-colors hover:bg-green-700"
                       >
                         精算する
                       </button>
