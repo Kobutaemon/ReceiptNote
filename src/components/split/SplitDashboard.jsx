@@ -56,15 +56,24 @@ function SplitDashboard({ user }) {
     }
   };
 
-  // 招待を取得（split_groupsへのJOINは権限がないため行わない）
+  // 招待を取得（グループ名も含めて取得）
   const loadInvitations = async () => {
     if (!userEmail) return;
 
     try {
-      // まず招待を取得
       const { data: invitationsData, error: invitationsError } = await supabase
         .from("group_invitations")
-        .select("id, group_id, status, created_at, invited_by")
+        .select(`
+          id, 
+          group_id, 
+          status, 
+          created_at, 
+          invited_by,
+          split_groups (
+            id,
+            name
+          )
+        `)
         .eq("invited_email", userEmail)
         .eq("status", "pending");
 
@@ -75,11 +84,10 @@ function SplitDashboard({ user }) {
         return;
       }
 
-      // 招待者のメールからグループ名を推測（暫定対応）
-      // 本来はグループ名を招待テーブルに保存するのがベスト
+      // グループ名を招待オブジェクトに追加
       const invitationsWithNames = invitationsData.map((inv) => ({
         ...inv,
-        groupName: "グループへの招待", // 暫定でジェネリックな名前を表示
+        groupName: inv.split_groups?.name || "グループへの招待",
       }));
 
       setPendingInvitations(invitationsWithNames);

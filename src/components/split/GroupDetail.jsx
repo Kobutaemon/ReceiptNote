@@ -103,7 +103,7 @@ function GroupDetail({ group, user, onBack }) {
           )
         `)
         .eq("group_id", group.id)
-        .order("expense_date", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (expensesError) throw expensesError;
       setExpenses(expensesData || []);
@@ -132,15 +132,40 @@ function GroupDetail({ group, user, onBack }) {
   // 招待送信
   const handleInvite = async (email) => {
     try {
-      // 拒否された既存の招待を削除（再招待を可能にする）
+      // 1. 既にグループメンバーかチェック
+      const { data: existingMember } = await supabase
+        .from("group_members")
+        .select("user_id")
+        .eq("group_id", group.id)
+        .eq("email", email)
+        .maybeSingle();
+
+      if (existingMember) {
+        return { error: "このユーザーは既にグループのメンバーです" };
+      }
+
+      // 2. pending状態の招待が既にあるかチェック
+      const { data: pendingInvitation } = await supabase
+        .from("group_invitations")
+        .select("id")
+        .eq("group_id", group.id)
+        .eq("invited_email", email)
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (pendingInvitation) {
+        return { error: "このメールアドレスには既に招待を送信しています" };
+      }
+
+      // 3. 過去の招待（accepted/declined）を削除して再招待を可能にする
       await supabase
         .from("group_invitations")
         .delete()
         .eq("group_id", group.id)
         .eq("invited_email", email)
-        .eq("status", "declined");
+        .in("status", ["accepted", "declined"]);
 
-      // 招待を作成
+      // 4. 新しい招待を作成
       const { error } = await supabase.from("group_invitations").insert({
         group_id: group.id,
         invited_email: email,
@@ -148,10 +173,6 @@ function GroupDetail({ group, user, onBack }) {
       });
 
       if (error) {
-        // 重複キー制約エラー（pending状態の招待が既に存在）
-        if (error.code === "23505") {
-          return { error: "このメールアドレスには既に招待を送信しています" };
-        }
         throw error;
       }
 
@@ -443,23 +464,25 @@ function GroupDetail({ group, user, onBack }) {
             onMonthChange={setSelectedMonth}
           />
 
-          {/* 支出追加ボタン */}
-          <button
-            type="button"
-            onClick={() => setIsExpenseModalOpen(true)}
-            className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-4 text-gray-500 transition-colors hover:border-blue-400 hover:text-blue-600"
-          >
-            <Plus size={20} />
-            <span>支出を追加</span>
-          </button>
+          {/* 支出追加ボタン + 支出一覧（max-width適用） */}
+          <div className="mx-auto max-w-2xl">
+            {/* 支出追加ボタン */}
+            <button
+              type="button"
+              onClick={() => setIsExpenseModalOpen(true)}
+              className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-4 text-gray-500 transition-colors hover:border-blue-400 hover:text-blue-600"
+            >
+              <Plus size={20} />
+              <span>支出を追加</span>
+            </button>
 
-          {/* 支出一覧（月別フィルタリング） */}
-          {expenses.length === 0 ? (
-            <div className="rounded-lg border border-gray-200 p-8 text-center text-gray-500">
-              まだ支出がありません
-            </div>
-          ) : (
-            <div className="space-y-3">
+            {/* 支出一覧（月別フィルタリング） */}
+            {expenses.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 p-8 text-center text-gray-500">
+                まだ支出がありません
+              </div>
+            ) : (
+              <div className="space-y-3">
               {expenses
                 .filter((expense) => {
                   const expenseDate = new Date(expense.expense_date);
@@ -558,8 +581,9 @@ function GroupDetail({ group, user, onBack }) {
               )}
             </div>
           )}
-        </>
-      ) : (
+        </div>
+      </>
+    ) : (
         <SettlementCalculator
           balances={balances}
           optimalSettlements={optimalSettlements}

@@ -52,20 +52,31 @@ function SplitListPage({ user }) {
       setGroups(groupList);
     } catch (error) {
       console.error("グループの取得に失敗しました", error);
+      console.error("エラー詳細:", JSON.stringify(error, null, 2));
       showToast("グループの取得に失敗しました", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 招待を取得
+  // 招待を取得（グループ名も含めて取得）
   const loadInvitations = async () => {
     if (!userEmail) return;
 
     try {
       const { data: invitationsData, error: invitationsError } = await supabase
         .from("group_invitations")
-        .select("id, group_id, status, created_at, invited_by")
+        .select(`
+          id, 
+          group_id, 
+          status, 
+          created_at, 
+          invited_by,
+          split_groups (
+            id,
+            name
+          )
+        `)
         .eq("invited_email", userEmail)
         .eq("status", "pending");
 
@@ -76,9 +87,10 @@ function SplitListPage({ user }) {
         return;
       }
 
+      // グループ名を招待オブジェクトに追加
       const invitationsWithNames = invitationsData.map((inv) => ({
         ...inv,
-        groupName: "グループへの招待",
+        groupName: inv.split_groups?.name || "グループへの招待",
       }));
 
       setPendingInvitations(invitationsWithNames);
