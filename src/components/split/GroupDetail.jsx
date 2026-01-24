@@ -8,6 +8,8 @@ import {
   Calculator,
   Edit,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import InviteMemberModal from "./InviteMemberModal";
 import AddSplitExpenseModal from "./AddSplitExpenseModal";
@@ -16,6 +18,7 @@ import SettleUpModal from "./SettleUpModal";
 import MemberListModal from "./MemberListModal";
 import { supabase } from "../../lib/supabaseClient";
 import { useToast } from "../../lib/toastContext";
+import { getCurrentMonth, getCurrentYear } from "../../utils/dateUtils";
 import {
   calculateBalances,
   calculateOptimalSettlements,
@@ -35,6 +38,8 @@ function GroupDetail({ group, user, onBack }) {
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null); // 編集中の支出
   const [expandedExpenseId, setExpandedExpenseId] = useState(null); // 展開中の支出
+  const [selectedYear, setSelectedYear] = useState(getCurrentYear());
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const { showToast } = useToast();
 
   const userId = user?.id ?? null;
@@ -342,6 +347,45 @@ function GroupDetail({ group, user, onBack }) {
         <div className="py-12 text-center text-gray-500">読み込み中...</div>
       ) : activeTab === "expenses" ? (
         <>
+          {/* 月別セレクター */}
+          <div className="mb-4 flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                const month = parseInt(selectedMonth, 10);
+                const year = parseInt(selectedYear, 10);
+                if (month === 1) {
+                  setSelectedMonth("12");
+                  setSelectedYear((year - 1).toString());
+                } else {
+                  setSelectedMonth((month - 1).toString().padStart(2, "0"));
+                }
+              }}
+              className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <span className="min-w-[120px] text-center text-lg font-semibold text-gray-800">
+              {selectedYear}年{selectedMonth}月
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const month = parseInt(selectedMonth, 10);
+                const year = parseInt(selectedYear, 10);
+                if (month === 12) {
+                  setSelectedMonth("01");
+                  setSelectedYear((year + 1).toString());
+                } else {
+                  setSelectedMonth((month + 1).toString().padStart(2, "0"));
+                }
+              }}
+              className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+
           {/* 支出追加ボタン */}
           <button
             type="button"
@@ -352,14 +396,21 @@ function GroupDetail({ group, user, onBack }) {
             <span>支出を追加</span>
           </button>
 
-          {/* 支出一覧 */}
+          {/* 支出一覧（月別フィルタリング） */}
           {expenses.length === 0 ? (
             <div className="rounded-lg border border-gray-200 p-8 text-center text-gray-500">
               まだ支出がありません
             </div>
           ) : (
             <div className="space-y-3">
-              {expenses.map((expense) => {
+              {expenses
+                .filter((expense) => {
+                  const expenseDate = new Date(expense.expense_date);
+                  const expenseYear = expenseDate.getFullYear().toString();
+                  const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
+                  return expenseYear === selectedYear && expenseMonth === selectedMonth;
+                })
+                .map((expense) => {
                 const isExpanded = expandedExpenseId === expense.id;
                 return (
                   <div
@@ -401,16 +452,16 @@ function GroupDetail({ group, user, onBack }) {
                     {isExpanded && (
                       <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
                         <p className="mb-2 text-xs font-medium text-gray-500">各自の負担額</p>
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {expense.expense_participants?.map((participant) => (
                             <div
                               key={participant.id}
-                              className="flex items-center justify-between text-sm"
+                              className="flex items-center justify-end gap-4 text-sm"
                             >
-                              <span className="text-gray-700">
+                              <span className="text-gray-700 text-right">
                                 {getMemberDisplay(participant.user_id)}
                               </span>
-                              <span className="font-medium text-gray-800">
+                              <span className="font-medium text-gray-800 min-w-[80px] text-right">
                                 {formatCurrency(participant.share_amount)}
                               </span>
                             </div>
@@ -438,6 +489,16 @@ function GroupDetail({ group, user, onBack }) {
                   </div>
                 );
               })}
+              {expenses.filter((expense) => {
+                const expenseDate = new Date(expense.expense_date);
+                const expenseYear = expenseDate.getFullYear().toString();
+                const expenseMonth = (expenseDate.getMonth() + 1).toString().padStart(2, "0");
+                return expenseYear === selectedYear && expenseMonth === selectedMonth;
+              }).length === 0 && (
+                <div className="rounded-lg border border-gray-200 p-8 text-center text-gray-500">
+                  {selectedYear}年{selectedMonth}月の支出はありません
+                </div>
+              )}
             </div>
           )}
         </>
