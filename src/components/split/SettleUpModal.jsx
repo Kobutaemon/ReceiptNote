@@ -5,16 +5,26 @@ function SettleUpModal({
   isOpen,
   onClose,
   settlement,
+  settlements,
   getMemberDisplay,
   onConfirm,
 }) {
   const handleConfirm = () => {
+    if (settlements && settlements.length > 0) {
+      onConfirm(settlements);
+      return;
+    }
     if (settlement) {
       onConfirm(settlement);
     }
   };
 
-  const shouldShow = isOpen && settlement;
+  const shouldShow =
+    isOpen && (Boolean(settlement) || (settlements && settlements.length > 0));
+  const isBulk = Boolean(settlements && settlements.length > 0);
+  const totalAmount = isBulk
+    ? settlements.reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
+    : Number(settlement?.amount) || 0;
 
   return (
     <div
@@ -29,7 +39,7 @@ function SettleUpModal({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {settlement && (
+        {(settlement || isBulk) && (
           <>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-800">精算を確認</h2>
@@ -43,26 +53,62 @@ function SettleUpModal({
             </div>
 
             <div className="mb-6 rounded-lg bg-gray-100 p-4">
-              <div className="flex items-center justify-center gap-4">
-                <div className="text-center">
-                  <p className="text-sm text-gray-500">支払い元</p>
-                  <p className="font-semibold text-gray-800">
-                    {getMemberDisplay(settlement.from)}
-                  </p>
-                </div>
-                <ArrowRight className="text-gray-400" size={24} />
-                <div className="text-center">
-                  <p className="text-sm text-gray-500">受取人</p>
-                  <p className="font-semibold text-gray-800">
-                    {getMemberDisplay(settlement.to)}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 text-center">
-                <p className="text-3xl font-bold text-green-600">
-                  {formatCurrency(settlement.amount)}
-                </p>
-              </div>
+              {isBulk ? (
+                <>
+                  <div className="mb-3 text-center">
+                    <p className="text-sm text-gray-500">合計</p>
+                    <p className="text-3xl font-bold text-green-600">
+                      {formatCurrency(totalAmount)}
+                    </p>
+                  </div>
+
+                  <div className="max-h-56 space-y-2 overflow-auto rounded-lg bg-white p-3">
+                    {settlements.map((s, idx) => (
+                      <div
+                        key={`${s.expenseId || s.expense_id || "no-expense"}-${idx}`}
+                        className="flex items-center justify-between gap-3 text-sm"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-gray-700">
+                            {s.title ? s.title : "支出"}
+                          </p>
+                          <p className="truncate text-xs text-gray-500">
+                            {getMemberDisplay(s.from)}
+                            <ArrowRight className="mx-1 inline text-gray-400" size={14} />
+                            {getMemberDisplay(s.to)}
+                          </p>
+                        </div>
+                        <p className="shrink-0 font-medium text-gray-800">
+                          {formatCurrency(s.amount)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500">支払い元</p>
+                      <p className="font-semibold text-gray-800">
+                        {getMemberDisplay(settlement.from)}
+                      </p>
+                    </div>
+                    <ArrowRight className="text-gray-400" size={24} />
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500">受取人</p>
+                      <p className="font-semibold text-gray-800">
+                        {getMemberDisplay(settlement.to)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-center">
+                    <p className="text-3xl font-bold text-green-600">
+                      {formatCurrency(settlement.amount)}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             <p className="mb-6 text-sm text-gray-600">
