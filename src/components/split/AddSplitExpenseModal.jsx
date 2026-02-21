@@ -120,6 +120,9 @@ function AddSplitExpenseModal({
       delete next[guestId];
       return next;
     });
+    // transferモードで選択されていた場合はリセット
+    if (transferFrom === guestId) setTransferFrom("");
+    if (transferTo === guestId) setTransferTo("");
   };
 
   // ゲストかどうか判定
@@ -140,17 +143,26 @@ function AddSplitExpenseModal({
       const numAmount = parseFloat(amount);
       if (isNaN(numAmount) || numAmount <= 0) return;
 
+      // ゲストかどうか判定
+      const fromIsGuest = transferFrom.startsWith("guest-");
+      const toIsGuest = transferTo.startsWith("guest-");
+      const fromGuest = fromIsGuest ? guests.find((g) => g.id === transferFrom) : null;
+      const toGuest = toIsGuest ? guests.find((g) => g.id === transferTo) : null;
+
       setIsSubmitting(true);
       try {
         await onSubmit({
           title: title.trim(),
           amount: numAmount,
           expenseDate,
-          paidBy: transferTo, // もらう人が元々立て替えた人
-          participants: [
-            { userId: transferFrom, shareAmount: numAmount }, // 払う人が全額負担
-          ],
-          guests: [], // transferモードではゲストなし
+          paidBy: toIsGuest ? null : transferTo, // もらう人（ゲストの場合はnull）
+          paidByGuestName: toGuest ? toGuest.name : null,
+          participants: fromIsGuest
+            ? []
+            : [{ userId: transferFrom, shareAmount: numAmount }],
+          guests: fromIsGuest
+            ? [{ guestName: fromGuest.name, shareAmount: numAmount }]
+            : [],
         });
       } finally {
         setIsSubmitting(false);
@@ -623,6 +635,11 @@ function AddSplitExpenseModal({
                         {member.user_id === currentUserId ? " (自分)" : ""}
                       </option>
                     ))}
+                    {guests.map((guest) => (
+                      <option key={`from-${guest.id}`} value={guest.id}>
+                        {guest.name} (ゲスト)
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="pt-6 font-bold text-gray-400">→</div>
@@ -642,7 +659,66 @@ function AddSplitExpenseModal({
                         {member.user_id === currentUserId ? " (自分)" : ""}
                       </option>
                     ))}
+                    {guests.map((guest) => (
+                      <option key={`to-${guest.id}`} value={guest.id}>
+                        {guest.name} (ゲスト)
+                      </option>
+                    ))}
                   </select>
+                </div>
+              </div>
+
+              {/* ゲスト追加（transferモード用） */}
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  ゲストを追加
+                </label>
+                <div className="space-y-2 rounded-lg border border-gray-200 p-3">
+                  {guests.map((guest) => (
+                    <div
+                      key={guest.id}
+                      className="flex items-center gap-3 rounded-lg bg-amber-50 p-2"
+                    >
+                      <span className="flex-1 text-gray-800">
+                        {guest.name}
+                        <span className="ml-2 inline-flex items-center rounded-full bg-amber-200 px-2 py-0.5 text-xs font-medium text-amber-800">
+                          ゲスト
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveGuest(guest.id)}
+                        className="rounded p-1 text-red-400 transition-colors hover:bg-red-100 hover:text-red-600"
+                        title="ゲストを削除"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2">
+                    <UserPlus size={16} className="text-gray-400 shrink-0" />
+                    <input
+                      type="text"
+                      value={guestNameInput}
+                      onChange={(e) => setGuestNameInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddGuest();
+                        }
+                      }}
+                      placeholder="ゲスト名を入力…"
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddGuest}
+                      disabled={!guestNameInput.trim()}
+                      className="rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      追加
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -651,11 +727,15 @@ function AddSplitExpenseModal({
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3 text-lg">
                       <strong className="text-gray-900 border-b border-gray-300 pb-0.5">
-                        {getMemberDisplay(members?.find(m => m.user_id === transferFrom) || {})}
+                        {transferFrom.startsWith("guest-")
+                          ? getGuestDisplay(transferFrom)
+                          : getMemberDisplay(members?.find(m => m.user_id === transferFrom) || {})}
                       </strong>
                       <span className="text-gray-400 font-bold">→</span>
                       <strong className="text-gray-900 border-b border-gray-300 pb-0.5">
-                        {getMemberDisplay(members?.find(m => m.user_id === transferTo) || {})}
+                        {transferTo.startsWith("guest-")
+                          ? getGuestDisplay(transferTo)
+                          : getMemberDisplay(members?.find(m => m.user_id === transferTo) || {})}
                       </strong>
                     </div>
                     <span className="font-bold text-2xl text-gray-900">

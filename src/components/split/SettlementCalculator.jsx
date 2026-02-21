@@ -110,12 +110,12 @@ function SettlementCalculator({
                   className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm"
                 >
                   <span className="text-gray-800 flex items-center gap-1.5">
-                    {displayName}
                     {isGuest && (
                       <span className="inline-flex items-center rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-medium text-amber-800">
                         ゲスト
                       </span>
                     )}
+                    {displayName}
                     {memberId === currentUserId && (
                       <span className="ml-2 text-xs text-gray-500">(自分)</span>
                     )}

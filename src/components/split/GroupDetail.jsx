@@ -92,6 +92,7 @@ function GroupDetail({ group, user, onBack }) {
           title,
           amount,
           paid_by,
+          paid_by_guest_name,
           expense_date,
           created_at,
           expense_participants (
@@ -196,7 +197,8 @@ function GroupDetail({ group, user, onBack }) {
           group_id: group.id,
           title: expenseData.title,
           amount: expenseData.amount,
-          paid_by: expenseData.paidBy,
+          paid_by: expenseData.paidBy || null,
+          paid_by_guest_name: expenseData.paidByGuestName || null,
           expense_date: expenseData.expenseDate,
         })
         .select()
@@ -408,7 +410,14 @@ function GroupDetail({ group, user, onBack }) {
     const settled = (settlements || [])
       .filter((s) => {
         if (s.expense_id !== expense.id) return false;
-        if (s.to_user !== expense.paid_by) return false;
+        // 精算先（to）が支払者かチェック
+        if (expense.paid_by) {
+          if (s.to_user !== expense.paid_by) return false;
+        } else if (expense.paid_by_guest_name) {
+          if (s.to_guest_name !== expense.paid_by_guest_name) return false;
+        } else {
+          return false;
+        }
         // ゲストの場合はguest_nameで照合
         if (participant.guest_name) {
           return s.from_guest_name === participant.guest_name;
@@ -425,7 +434,12 @@ function GroupDetail({ group, user, onBack }) {
   const getExpenseRemainingTotal = (expense) => {
     const participants = expense.expense_participants || [];
     return participants
-      .filter((p) => p.user_id !== expense.paid_by)
+      .filter((p) => {
+        // 支払者自身を除外
+        if (expense.paid_by && p.user_id === expense.paid_by) return false;
+        if (expense.paid_by_guest_name && p.guest_name === expense.paid_by_guest_name) return false;
+        return true;
+      })
       .reduce(
         (sum, p) => sum + getRemainingForParticipant(expense, p),
         0,
@@ -456,15 +470,20 @@ function GroupDetail({ group, user, onBack }) {
     const participants = expense.expense_participants || [];
 
     return participants
-      .filter((p) => p.user_id !== expense.paid_by)
+      .filter((p) => {
+        // 支払者自身を除外
+        if (expense.paid_by && p.user_id === expense.paid_by) return false;
+        if (expense.paid_by_guest_name && p.guest_name === expense.paid_by_guest_name) return false;
+        return true;
+      })
       .map((p) => {
         const remaining = getRemainingForParticipant(expense, p);
         if (!remaining || remaining <= 0) return null;
         return {
           from: p.user_id || null,
           fromGuestName: p.guest_name || null,
-          to: expense.paid_by,
-          toGuestName: null,
+          to: expense.paid_by || null,
+          toGuestName: expense.paid_by_guest_name || null,
           amount: remaining,
           expenseId: expense.id,
           title: expense.title,
@@ -678,7 +697,7 @@ function GroupDetail({ group, user, onBack }) {
                                       {expense.title}
                                     </h3>
                                     <p className="text-sm text-gray-500">
-                                      {getMemberDisplay(expense.paid_by)}{" "}
+                                      {getMemberDisplay(expense.paid_by, expense.paid_by_guest_name)}{" "}
                                       が支払い
                                     </p>
                                     <p className="text-xs text-gray-400">
@@ -738,14 +757,14 @@ function GroupDetail({ group, user, onBack }) {
                                           className="flex items-center justify-end gap-4 text-sm"
                                         >
                                           <span className="text-gray-700 text-right flex items-center gap-1.5">
-                                            {getMemberDisplay(
-                                              participant.user_id,
-                                              participant.guest_name,
-                                            )}
                                             {participant.guest_name && (
                                               <span className="inline-flex items-center rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-medium text-amber-800">
                                                 ゲスト
                                               </span>
+                                            )}
+                                            {getMemberDisplay(
+                                              participant.user_id,
+                                              participant.guest_name,
                                             )}
                                           </span>
                                           <span className="font-medium text-gray-800 min-w-[80px] text-right">
@@ -775,8 +794,8 @@ function GroupDetail({ group, user, onBack }) {
                                 </div>
                               )}
 
-                              {/* 削除ボタン（支払者のみ表示） */}
-                              {expense.paid_by === userId && (
+                              {/* 削除ボタン（支払者 or ゲスト支払いの場合はメンバーなら表示） */}
+                              {(expense.paid_by === userId || !expense.paid_by) && (
                                 <div className="flex justify-end gap-2 border-t border-gray-100 px-4 py-2">
                                   <button
                                     type="button"

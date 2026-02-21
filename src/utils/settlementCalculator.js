@@ -22,10 +22,14 @@ export const calculateBalances = (expenses, settlements = []) => {
   // 各支出について残高を計算
   expenses.forEach((expense) => {
     const paidBy = expense.paid_by || expense.paidBy;
+    const paidByGuestName = expense.paid_by_guest_name || expense.paidByGuestName;
+    const paidByKey = paidBy || (paidByGuestName ? `guest:${paidByGuestName}` : null);
     const amount = Number(expense.amount) || 0;
 
     // 支払った人は金額分プラス
-    balances[paidBy] = (balances[paidBy] || 0) + amount;
+    if (paidByKey) {
+      balances[paidByKey] = (balances[paidByKey] || 0) + amount;
+    }
 
     // 参加者は負担分マイナス
     const participants = expense.participants || expense.expense_participants || [];
