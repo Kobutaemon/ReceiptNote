@@ -97,6 +97,7 @@ function GroupDetail({ group, user, onBack }) {
           expense_participants (
             id,
             user_id,
+            guest_name,
             share_amount,
             is_settled
           )
@@ -203,18 +204,30 @@ function GroupDetail({ group, user, onBack }) {
 
       if (expenseError) throw expenseError;
 
-      // 参加者を追加
+      // 登録メンバーの参加者を追加
       const participantsPayload = expenseData.participants.map((p) => ({
         expense_id: newExpense.id,
         user_id: p.userId,
         share_amount: p.shareAmount,
       }));
 
-      const { error: participantsError } = await supabase
-        .from("expense_participants")
-        .insert(participantsPayload);
+      // ゲスト参加者を追加
+      const guestPayload = (expenseData.guests || []).map((g) => ({
+        expense_id: newExpense.id,
+        user_id: null,
+        guest_name: g.guestName,
+        share_amount: g.shareAmount,
+      }));
 
-      if (participantsError) throw participantsError;
+      const allPayload = [...participantsPayload, ...guestPayload];
+
+      if (allPayload.length > 0) {
+        const { error: participantsError } = await supabase
+          .from("expense_participants")
+          .insert(allPayload);
+
+        if (participantsError) throw participantsError;
+      }
 
       showToast("支出を追加しました", "success");
       setIsExpenseModalOpen(false);
@@ -234,8 +247,10 @@ function GroupDetail({ group, user, onBack }) {
 
       const payload = rows.map((s) => ({
         group_id: group.id,
-        from_user: s.from,
-        to_user: s.to,
+        from_user: s.fromGuestName ? null : s.from,
+        from_guest_name: s.fromGuestName || null,
+        to_user: s.toGuestName ? null : s.to,
+        to_guest_name: s.toGuestName || null,
         amount: s.amount,
         expense_id: s.expenseId || s.expense_id || null,
       }));
@@ -370,7 +385,11 @@ function GroupDetail({ group, user, onBack }) {
   const isOwner = currentMember?.role === "owner";
 
   // メンバーの表示名ヘルパー（ユーザー名 > メール > ID）
-  const getMemberDisplay = (memberId) => {
+  // ゲスト名も対応: memberIdがnullの場合はguestNameを使用
+  const getMemberDisplay = (memberId, guestName) => {
+    // ゲストの場合
+    if (!memberId && guestName) return guestName;
+    if (!memberId) return "不明";
     const member = members.find((m) => m.user_id === memberId);
     // ユーザー名が設定されていれば優先表示
     if (member?.display_name) return member.display_name;
@@ -379,21 +398,23 @@ function GroupDetail({ group, user, onBack }) {
     return memberId.slice(0, 8) + "...";
   };
 
-  // ある支出について、特定メンバー1人分の「未精算額」を計算
-  const getRemainingForParticipant = (expense, participantId) => {
-    const participants = expense.expense_participants || [];
-    const target = participants.find((p) => p.user_id === participantId);
-    if (!target) return 0;
+  // ある支出について、特定参加者1人分の「未精算額」を計算
+  // participant: expense_participants の1行（user_id or guest_name を持つ）
+  const getRemainingForParticipant = (expense, participant) => {
+    if (!participant) return 0;
 
-    const share = Number(target.share_amount) || 0;
+    const share = Number(participant.share_amount) || 0;
 
     const settled = (settlements || [])
-      .filter(
-        (s) =>
-          s.expense_id === expense.id &&
-          s.from_user === participantId &&
-          s.to_user === expense.paid_by,
-      )
+      .filter((s) => {
+        if (s.expense_id !== expense.id) return false;
+        if (s.to_user !== expense.paid_by) return false;
+        // ゲストの場合はguest_nameで照合
+        if (participant.guest_name) {
+          return s.from_guest_name === participant.guest_name;
+        }
+        return s.from_user === participant.user_id;
+      })
       .reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
 
     const remaining = Math.max(0, Math.round((share - settled) * 100) / 100);
@@ -406,7 +427,7 @@ function GroupDetail({ group, user, onBack }) {
     return participants
       .filter((p) => p.user_id !== expense.paid_by)
       .reduce(
-        (sum, p) => sum + getRemainingForParticipant(expense, p.user_id),
+        (sum, p) => sum + getRemainingForParticipant(expense, p),
         0,
       );
   };
@@ -416,7 +437,9 @@ function GroupDetail({ group, user, onBack }) {
     if (!userId) return 0;
     // 自分が支払者の場合は「受け取り側」なので、自分の未精算としては表示しない
     if (expense.paid_by === userId) return 0;
-    return getRemainingForParticipant(expense, userId);
+    const participants = expense.expense_participants || [];
+    const myParticipant = participants.find((p) => p.user_id === userId);
+    return getRemainingForParticipant(expense, myParticipant);
   };
 
   const toggleSelectedExpense = (expenseId) => {
@@ -435,11 +458,13 @@ function GroupDetail({ group, user, onBack }) {
     return participants
       .filter((p) => p.user_id !== expense.paid_by)
       .map((p) => {
-        const remaining = getRemainingForParticipant(expense, p.user_id);
+        const remaining = getRemainingForParticipant(expense, p);
         if (!remaining || remaining <= 0) return null;
         return {
-          from: p.user_id,
+          from: p.user_id || null,
+          fromGuestName: p.guest_name || null,
           to: expense.paid_by,
+          toGuestName: null,
           amount: remaining,
           expenseId: expense.id,
           title: expense.title,
@@ -580,8 +605,11 @@ function GroupDetail({ group, user, onBack }) {
               </div>
             ) : (
               <>
-                {/* 一括選択ボタン */}
-                <div className="mb-3 flex justify-end">
+                {/* 説明テキストと一括選択ボタン */}
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-medium text-gray-600">
+                    精算したいものをチェック
+                  </p>
                   <button
                     type="button"
                     onClick={handleToggleSelectAllFiltered}
@@ -709,9 +737,15 @@ function GroupDetail({ group, user, onBack }) {
                                           key={participant.id}
                                           className="flex items-center justify-end gap-4 text-sm"
                                         >
-                                          <span className="text-gray-700 text-right">
+                                          <span className="text-gray-700 text-right flex items-center gap-1.5">
                                             {getMemberDisplay(
                                               participant.user_id,
+                                              participant.guest_name,
+                                            )}
+                                            {participant.guest_name && (
+                                              <span className="inline-flex items-center rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-medium text-amber-800">
+                                                ゲスト
+                                              </span>
                                             )}
                                           </span>
                                           <span className="font-medium text-gray-800 min-w-[80px] text-right">
@@ -841,6 +875,7 @@ function GroupDetail({ group, user, onBack }) {
         settlements={selectedExpenseSettlements}
         getMemberDisplay={getMemberDisplay}
         onConfirm={handleSettle}
+        currentUserId={userId}
       />
 
       <MemberListModal

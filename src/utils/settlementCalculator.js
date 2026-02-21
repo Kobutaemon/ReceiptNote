@@ -12,6 +12,13 @@
 export const calculateBalances = (expenses, settlements = []) => {
   const balances = {};
 
+  // ゲスト用のキーを生成するヘルパー
+  const getParticipantKey = (userId, guestName) => {
+    if (userId) return userId;
+    if (guestName) return `guest:${guestName}`;
+    return null;
+  };
+
   // 各支出について残高を計算
   expenses.forEach((expense) => {
     const paidBy = expense.paid_by || expense.paidBy;
@@ -24,19 +31,28 @@ export const calculateBalances = (expenses, settlements = []) => {
     const participants = expense.participants || expense.expense_participants || [];
     participants.forEach((participant) => {
       const userId = participant.user_id || participant.userId;
+      const guestName = participant.guest_name || participant.guestName;
+      const key = getParticipantKey(userId, guestName);
+      if (!key) return;
       const shareAmount = Number(participant.share_amount || participant.shareAmount) || 0;
-      balances[userId] = (balances[userId] || 0) - shareAmount;
+      balances[key] = (balances[key] || 0) - shareAmount;
     });
   });
 
   // 既存の精算を反映
   settlements.forEach((settlement) => {
-    const fromUser = settlement.from_user || settlement.fromUser;
-    const toUser = settlement.to_user || settlement.toUser;
+    const fromKey = getParticipantKey(
+      settlement.from_user || settlement.fromUser,
+      settlement.from_guest_name || settlement.fromGuestName
+    );
+    const toKey = getParticipantKey(
+      settlement.to_user || settlement.toUser,
+      settlement.to_guest_name || settlement.toGuestName
+    );
     const amount = Number(settlement.amount) || 0;
 
-    balances[fromUser] = (balances[fromUser] || 0) + amount;
-    balances[toUser] = (balances[toUser] || 0) - amount;
+    if (fromKey) balances[fromKey] = (balances[fromKey] || 0) + amount;
+    if (toKey) balances[toKey] = (balances[toKey] || 0) - amount;
   });
 
   return balances;

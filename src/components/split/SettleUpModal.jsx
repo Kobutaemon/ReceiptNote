@@ -8,6 +8,7 @@ function SettleUpModal({
   settlements,
   getMemberDisplay,
   onConfirm,
+  currentUserId,
 }) {
   const handleConfirm = () => {
     if (settlements && settlements.length > 0) {
@@ -22,9 +23,18 @@ function SettleUpModal({
   const shouldShow =
     isOpen && (Boolean(settlement) || (settlements && settlements.length > 0));
   const isBulk = Boolean(settlements && settlements.length > 0);
-  const totalAmount = isBulk
-    ? settlements.reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
-    : Number(settlement?.amount) || 0;
+  
+  // ユーザーのプラスマイナスを計算
+  const netAmount = isBulk && currentUserId
+    ? settlements.reduce((sum, s) => {
+        if (s.to === currentUserId) return sum + (Number(s.amount) || 0);
+        if (s.from === currentUserId) return sum - (Number(s.amount) || 0);
+        return sum;
+      }, 0)
+    : 0;
+
+  const isPositive = netAmount > 0;
+  const isNegative = netAmount < 0;
 
   return (
     <div
@@ -56,9 +66,11 @@ function SettleUpModal({
               {isBulk ? (
                 <>
                   <div className="mb-3 text-center">
-                    <p className="text-sm text-gray-500">合計</p>
-                    <p className="text-3xl font-bold text-green-600">
-                      {formatCurrency(totalAmount)}
+                    <p className="text-sm text-gray-500 mb-1">
+                      {isPositive ? "あなたが受け取る金額" : isNegative ? "あなたが支払う金額" : "あなたの合計収支"}
+                    </p>
+                    <p className={`text-3xl font-bold ${isPositive ? "text-green-600" : isNegative ? "text-red-500" : "text-gray-600"}`}>
+                      {isNegative ? "- " : isPositive ? "+ " : ""}{formatCurrency(Math.abs(netAmount))}
                     </p>
                   </div>
 
@@ -73,9 +85,9 @@ function SettleUpModal({
                             {s.title ? s.title : "支出"}
                           </p>
                           <p className="truncate text-xs text-gray-500">
-                            {getMemberDisplay(s.from)}
+                            {getMemberDisplay(s.from, s.fromGuestName)}
                             <ArrowRight className="mx-1 inline text-gray-400" size={14} />
-                            {getMemberDisplay(s.to)}
+                            {getMemberDisplay(s.to, s.toGuestName)}
                           </p>
                         </div>
                         <p className="shrink-0 font-medium text-gray-800">
@@ -91,14 +103,14 @@ function SettleUpModal({
                     <div className="text-center">
                       <p className="text-sm text-gray-500">支払い元</p>
                       <p className="font-semibold text-gray-800">
-                        {getMemberDisplay(settlement.from)}
+                        {getMemberDisplay(settlement.from, settlement.fromGuestName)}
                       </p>
                     </div>
                     <ArrowRight className="text-gray-400" size={24} />
                     <div className="text-center">
                       <p className="text-sm text-gray-500">受取人</p>
                       <p className="font-semibold text-gray-800">
-                        {getMemberDisplay(settlement.to)}
+                        {getMemberDisplay(settlement.to, settlement.toGuestName)}
                       </p>
                     </div>
                   </div>

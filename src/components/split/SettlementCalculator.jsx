@@ -48,10 +48,12 @@ function SettlementCalculator({
                   <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 w-full md:w-auto">
                     <div className="text-center md:text-left">
                       <span className="text-sm font-medium text-gray-800">
-                        {getMemberDisplay(settlement.from)}
+                        {settlement.from?.startsWith?.('guest:') 
+                          ? getMemberDisplay(null, settlement.from.replace('guest:', ''))
+                          : getMemberDisplay(settlement.from)}
                       </span>
                       {settlement.from === currentUserId && (
-                        <span className="ml-1 text-xs text-blue-600 whitespace-nowrap">(自分)</span>
+                        <span className="ml-1 text-xs text-blue-600 whitespace-nowrap">（自分）</span>
                       )}
                     </div>
                     
@@ -59,10 +61,12 @@ function SettlementCalculator({
                     
                     <div className="text-center md:text-left">
                       <span className="text-sm font-medium text-gray-800">
-                        {getMemberDisplay(settlement.to)}
+                        {settlement.to?.startsWith?.('guest:') 
+                          ? getMemberDisplay(null, settlement.to.replace('guest:', ''))
+                          : getMemberDisplay(settlement.to)}
                       </span>
                       {settlement.to === currentUserId && (
-                        <span className="ml-1 text-xs text-blue-600 whitespace-nowrap">(自分)</span>
+                        <span className="ml-1 text-xs text-blue-600 whitespace-nowrap">（自分）</span>
                       )}
                     </div>
                   </div>
@@ -96,13 +100,22 @@ function SettlementCalculator({
             .sort(([, a], [, b]) => b - a)
             .map(([memberId, balance]) => {
               const info = formatBalance(balance);
+              const isGuest = memberId.startsWith('guest:');
+              const displayName = isGuest
+                ? getMemberDisplay(null, memberId.replace('guest:', ''))
+                : getMemberDisplay(memberId);
               return (
                 <div
                   key={memberId}
                   className="flex items-center justify-between rounded-lg bg-white p-3 shadow-sm"
                 >
-                  <span className="text-gray-800">
-                    {getMemberDisplay(memberId)}
+                  <span className="text-gray-800 flex items-center gap-1.5">
+                    {displayName}
+                    {isGuest && (
+                      <span className="inline-flex items-center rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-medium text-amber-800">
+                        ゲスト
+                      </span>
+                    )}
                     {memberId === currentUserId && (
                       <span className="ml-2 text-xs text-gray-500">(自分)</span>
                     )}
@@ -127,9 +140,9 @@ function SettlementCalculator({
                 className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
               >
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span>{getMemberDisplay(settlement.from_user)}</span>
+                  <span>{getMemberDisplay(settlement.from_user, settlement.from_guest_name)}</span>
                   <ArrowRight size={16} />
-                  <span>{getMemberDisplay(settlement.to_user)}</span>
+                  <span>{getMemberDisplay(settlement.to_user, settlement.to_guest_name)}</span>
                 </div>
                 <div className="text-right">
                   <p className="font-medium text-gray-800">
